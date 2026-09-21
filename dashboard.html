@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Radar B2B — AUDES Group</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js">
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#2a313a;--tx:#e6e6e1;--tx2:#a8a8a0;--tx3:#7a7a72;--ac:#5b8def;--acbg:#182742;--ok:#4ade80;--okbg:#12281a;--warn:#e8a04c;--warnbg:#2c2012;--neu:#8b8b82;--neubg:#22272e}
+body.light{--bg:#f7f7f5;--card:#fff;--line:#e4e4e0;--tx:#1c1c1a;--tx2:#55554f;--tx3:#8f8f88;--ac:#1d4ed8;--acbg:#e8eefc;--ok:#15803d;--okbg:#e7f4ec;--warn:#b45309;--warnbg:#fdf1e3;--neu:#6b6b64;--neubg:#efefeb}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.5;padding:18px;max-width:1120px;margin:0 auto;transition:background .3s}
+.tabs{display:flex;gap:13px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap;align-items:baseline}
+.tabs button{background:none;border:none;font:inherit;font-size:13px;color:var(--tx2);padding:8px 2px;cursor:pointer;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--tx);border-bottom-color:var(--tx);font-weight:600}
+h1{font-size:16px;font-weight:600}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;background:var(--acbg);color:var(--ac);vertical-align:middle}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;animation:k 2s infinite}
+@keyframes k{0%,100%{opacity:1}50%{opacity:.35}}
+.meta{margin-left:auto;font-size:12px;color:var(--tx3)}
+.view{display:none}.view.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.pt{font-size:12px;color:var(--tx3);margin-bottom:8px}
+.row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.row:last-child{border-bottom:none}
+.k{color:var(--tx3);width:110px;flex-shrink:0;font-size:12px}
+.tr{flex:1;height:6px;border-radius:3px;background:var(--neubg);overflow:hidden}
+.tr>div{height:100%;background:var(--ac);border-radius:3px}
+.sc{width:26px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.tg{font-size:10px;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.g{background:var(--okbg);color:var(--ok)}.w{background:var(--warnbg);color:var(--warn)}.n{background:var(--neubg);color:var(--neu)}
+.note{font-size:11px;color:var(--tx3);margin-top:8px}
+.flag{font-size:12px;padding:8px 10px;border-radius:8px;background:var(--warnbg);color:var(--tx2);margin-top:10px}
+.flag b{color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--tx3);font-weight:500;font-size:11px}
+.sec{font-size:13px;font-weight:600;margin:14px 0 8px}
+.num{font-size:21px;font-weight:600;display:block}
+.big6{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.big6>div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.chip{border:1px solid var(--line);border-radius:6px;padding:2px 10px;font-size:11.5px;background:transparent;color:var(--tx2);cursor:pointer}
+.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.idv{font-size:12.5px;padding:3px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
+.idv:last-child{border-bottom:none}
+.idv b{color:var(--tx3);font-weight:500;width:130px;flex-shrink:0;font-size:11.5px}
+.idv span[contenteditable]{flex:1;outline:none;border-radius:4px;padding:0 4px}
+.idv span[contenteditable]:focus{background:var(--acbg)}
+.rd{position:relative;width:13px;height:13px;border:1px solid var(--tx3);border-radius:50%;display:inline-block;flex-shrink:0}
+.rd i{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 62%,var(--ac) 100%);animation:sw 1.6s linear infinite}
+@keyframes sw{to{transform:rotate(360deg)}}
+.step{color:var(--tx3);font-size:11.5px}
+.mk{position:relative;width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0}
+.mk:after{content:'';position:absolute;inset:-7px;border-radius:50%;border:2px solid currentColor;animation:pg 2.2s ease-out infinite}
+.mk.m1{background:#3b82f6;color:#3b82f6}.mk.m2{background:#4ade80;color:#4ade80}.mk.m3{background:#e8a04c;color:#e8a04c}.mk.m5{background:#f87171;color:#f87171}
+@keyframes pg{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.7);opacity:0}}
+.mapfilter{position:absolute;bottom:14px;left:10px;z-index:2000;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--tx2)}
+.mapfilter label{display:flex;align-items:center;gap:7px;padding:2px 0;cursor:pointer}
+.mapfilter input{accent-color:var(--ac)}
+.maplibregl-popup-content{background:var(--card)!important;color:var(--tx)!important;border:1px solid var(--line);border-radius:10px;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.maplibregl-popup-tip{border-top-color:var(--card)!important}
+body:not(.light) .maplibregl-canvas{filter:invert(.93) hue-rotate(185deg) saturate(.55) brightness(.92)}
+input[type=text],#newcli,#newctry,#newsim,#newcty{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;color:var(--tx)}
+</style>
+</head>
+<body class="dark">
+
+<div class="tabs">
+<h1>Radar commerciale — <span id="co-title">Azienda</span> <span class="tag">Tipo 3 · custom indiretto</span></h1>
+<button class="on" data-v="v0">Panoramica</button>
+<button data-v="v5">Identikit</button>
+<button data-v="v9">Radar investitori</button>
+<button data-v="v8">Segui il cliente</button>
+<button data-v="v10">Aziende simili</button>
+<button data-v="v6">Clienti</button>
+<button data-v="v7">Concorrenti</button>
+<button data-v="v3">Dove andare</button>
+<button data-v="v11">Sala strategia</button>
+<button data-v="v4">Vista globale</button>
+<button id="theme" style="font-size:12px;color:var(--tx3)">◐</button>
+<span class="meta"><span class="pulse"></span>radar attivo · dati: <b id="livdate">caricamento…</b> · <b>build 21-set 12:15</b></span>
+</div>
+
+<div class="view on" id="v0">
+<div class="card" id="cobanner" style="display:none"></div>
+<div class="big6" id="pancards"></div>
+<div class="grid" style="margin-top:12px">
+<div class="card">
+<div class="pt">Profilo</div>
+<div class="row"><span class="k">Sede</span><span id="co-sede">—</span></div>
+<div class="row"><span class="k">Dipendenti</span>21-49</div>
+<div class="row"><span class="k">Fatturato</span><span id="co-fatt">—</span></div>
+<div class="row"><span class="k">Presidente</span><span id="co-pres">—</span></div>
+<div class="row"><span class="k">Offerta</span>workwear · teamwear · merchandising · e-commerce B2B</div>
+<div class="flag"><b>Segnale n.1:</b> fatturato -20% nel 2025, margini ~1-2%. Il brief non è "trovare clienti" ma ricostruire crescita con mix a margine migliore.</div>
+</div>
+<div class="card" id="livecard" style="display:none">
+<div class="pt">Cosa è cambiato — dati della notte scorsa</div>
+<div id="livediff"></div>
+<div class="pt" style="margin-top:10px">Dove andare — dallo stato attuale dei dati</div>
+<div id="livedove"></div>
+</div>
+<div class="card">
+<div class="pt">Il flusso del radar</div>
+<div class="row"><div style="flex:1"><b>1. Identikit</b><div class="note" style="margin-top:2px">definisci le tipologie cliente — scheda a parte</div></div><span class="tg g">umano</span></div>
+<div class="row"><div style="flex:1"><b>2. Discovery</b><div class="note" style="margin-top:2px">il motore estrae aziende che matchano gli identikit, per paese</div></div><span class="tg n">motore</span></div>
+<div class="row"><div style="flex:1"><b>3. Key persons</b><div class="note" style="margin-top:2px">chi decide, prova pubblica, angolo d'approccio</div></div><span class="tg n">motore</span></div>
+<div class="row"><div style="flex:1"><b>4. Prescrizione</b><div class="note" style="margin-top:2px">canali → prodotto d'ingresso → trigger per identikit</div></div><span class="tg g">umano+IA</span></div>
+<div class="row"><div style="flex:1"><b>5. Watchlist</b><div class="note" style="margin-top:2px">eventi, alert, pagina "cosa è cambiato"</div></div><span class="tg n">motore</span></div>
+</div>
+</div>
+</div>
+
+<div class="view" id="v5">
+<div class="editbar">Ogni tipologia cliente ha la sua scheda-identikit. Clicca su un valore per modificarlo: si salva nel browser (versione pro: salvato sul server, il ranking usa i tuoi identikit). Le modifiche dell'abbonato <b>precedono</b> le stime del motore.</div>
+<div class="grid" id="idk"></div>
+</div>
+
+<div class="view" id="v9">
+<div class="editbar">Capitale proprio, debito, agevolazioni e autofinanziamento — in ordine di realismo per un'azienda da ~15-18M€: prima il debito smart e il cash interno, l'equity PE quando la crescita è dimostrata. Per ogni investitore, il metodo di contatto suggerito dall'agente.</div>
+<div class="grid">
+<div class="card">
+<div class="pt">Investitori per il settore — con metodo di contatto suggerito</div>
+<table><tbody>
+<tr><td><b>Riello SGR — Buy&amp;Build Opportunities</b></td><td><span class="tg w">PE maggioranza</span></td><td>fondo 2025 <b>aperto a nuove sottoscrizioni</b>; maggioranze in PMI Made in Italy export-oriented<div class="small" style="color:var(--ac);margin-top:2px">Contatto: LinkedIn deal team · advisor/banca d'investimento · eventi AIFI</div></td><td><b>altissimo</b></td></tr>
+<tr><td><b>Quadrivio</b></td><td><span class="tg w">PE mid-market</span></td><td>Made in Italy Fund I/II (lifestyle) + Industry 4.0 Fund<div class="small" style="color:var(--ac);margin-top:2px">Contatto: form sito fondo · LinkedIn · rete imprenditoriale</div></td><td>alto</td></tr>
+<tr><td><b>Riello — Impresa Italia II</b></td><td><span class="tg n">private debt</span></td><td>minibond PMI; sottoscrizione conclusa — monitorare fondo successivo<div class="small" style="color:var(--ac);margin-top:2px">Contatto: banca o broker autorizzato</div></td><td>medio</td></tr>
+<tr><td><b>CDP — Fondo Italiano (FICC)</b></td><td><span class="tg w">PE consolidamento</span></td><td>maggioranze per "campioni nazionali"<div class="small" style="color:var(--ac);margin-top:2px">Contatto: banca consulente/advisor · canali CDP</div></td><td>medio-alto</td></tr>
+<tr><td><b>FSI</b></td><td><span class="tg w">PE mid-market</span></td><td>patient capital, ricambio generazionale<div class="small" style="color:var(--ac);margin-top:2px">Contatto: sito fondo · advisor</div></td><td>medio</td></tr>
+<tr><td><b>Alto Partners</b></td><td><span class="tg w">PE</span></td><td>famiglie imprenditoriali, MBO<div class="small" style="color:var(--ac);margin-top:2px">Contatto: network imprenditoriale · AIFI · LinkedIn</div></td><td>medio</td></tr>
+<tr><td>Apheon · Arcadia · Assietta · Azimut CM</td><td><span class="tg n">small-mid cap</span></td><td>operatori small-mid cap — da valutare<div class="small" style="color:var(--ac);margin-top:2px">Contatto: LinkedIn deal team · piattaforme deal flow</div></td><td>da mappare</td></tr>
+<tr><td>Club degli Investitori · IAG</td><td><span class="tg n">angels</span></td><td>ticket piccoli — bridge o digitale<div class="small" style="color:var(--ac);margin-top:2px">Contatto: pitch su piattaforme ed eventi</div></td><td>strategico</td></tr>
+<tr><td>Crowdfundme · Mamacrowd</td><td><span class="tg n">equity crowdfunding</span></td><td>retail + effetto marketing<div class="small" style="color:var(--ac);margin-top:2px">Contatto: campagna sul portale — se hai già community</div></td><td>nicchia</td></tr>
+</tbody></table>
+<div class="note">Contesto: l'80% delle operazioni PE italiane riguarda imprese sotto i 50M€ di fatturato, ticket medio ~16M€ — la fascia di AUDES è quella dove i fondi cercano. Nomi da verificare al momento della raccolta.</div>
+</div>
+<div class="card">
+<div class="pt">Autofinanziamento e debito smart — prima di dare equity</div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Factoring / anticipo fatture</b><div class="small">cassiere sui crediti verso i grandi clienti</div></div><span class="tg g">subito</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Nuova Sabatini</b><div class="small">sconto in fattura su beni strumentali</div></div><span class="tg g">agevolazione</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Transizione 4.0 / credito d'imposta R&amp;S</b><div class="small">l'e-commerce interno può rientrarci</div></div><span class="tg g">agevolazione</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Minibond su MOT</b><div class="small">debito 3-5 anni senza diluire — per il piano export</div></div><span class="tg w">3-6 mesi</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Sale &amp; leaseback immobili</b><div class="small">monetizza il sedime, resti in affitto</div></div><span class="tg w">1-3 mesi</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Garanzia SACE su finanziamento</b><div class="small">sgrava le garanzie reali per l'estero</div></div><span class="tg w">1-3 mesi</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Revenue-based financing</b><div class="small">rimborso % fatturato — per il ramo ricorrente</div></div><span class="tg n">selettivo</span></div>
+<div class="row" style="align-items:flex-start"><div style="flex:1"><b>Condizioni commerciali</b><div class="small">acconti su contratti annuali + dilazioni fornitori</div></div><span class="tg g">sempre</span></div>
+<div class="flag"><b>La sequenza giusta:</b> prima cassa e agevolazioni, poi debito strutturato per l'export (minibond/SACE), l'equity PE — col Buy&amp;Build di Riello aperto ora — solo quando il piano di crescita è dimostrato.</div>
+</div>
+</div>
+</div>
+
+<div class="view" id="v8">
+<div class="editbar">Il criterio: <b>entità dello stesso gruppo in altri paesi, con centro decisionale autonomo</b>. Se sei fornitore di una sola entità del gruppo — es. Electrolux Italia — le altre entità nel mondo (Electrolux Svezia, USA, Brasile...) sono i contatti più caldi che esistano: la referenza interna apre la porta. Il motore mappa tutte le entità del gruppo, classifica l'autonomia di ciascuna e stima il fabbisogno. Esempio reale mostrato sotto: Barilla (30 comprensori, 15 Italia + 15 estero).</div>
+<div class="card" style="margin-bottom:12px">
+<div class="pt">I tuoi clienti — inserisci i nomi, il motore mappa le entità del gruppo nel mondo</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input id="newcli" placeholder="Nome azienda cliente, es. Ferrero" style="flex:1;min-width:220px">
+<button id="addcli" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer">Aggiungi</button>
+</div>
+<table style="margin-top:8px"><thead><tr><th>Cliente inserito</th><th>Stato</th></tr></thead><tbody id="mycli">
+<tr><td><b>Barilla</b></td><td><span class="tg g">mappato — vedi sotto</span></td></tr>
+</tbody></table>
+<div class="note">Nella versione pro: caricamento da file (Excel/CSV) o da fatture; il discovery agent mappa le entità entro l'edizione successiva. <span style="opacity:.7">(demo: stati e fasi simulati)</span></div>
+</div>
+<div class="card" style="display:none">
+<div class="pt">Barilla · entità del gruppo nel mondo (estratto) · autonomia e mossa</div>
+<table><thead><tr><th>Sito</th><th>Paese</th><th>Attività / scala</th><th>Autonomia</th><th>Fabbisogno stimato</th><th>Mossa</th></tr></thead><tbody>
+<tr><td><b>Parma — Pedrignano</b></td><td>Italia</td><td>HQ + più grande pastificio del mondo</td><td><span class="tg n">centrale</span></td><td>alto (riferimento)</td><td>il contratto qui apre le porte</td></tr>
+<tr><td>Castiglione delle Stiviere</td><td>Italia</td><td>bakery, 105 kt/anno, 11 linee</td><td><span class="tg w">locale su corredo</span></td><td>medio-alto</td><td>kit nuova linea in ramp-up</td></tr>
+<tr><td>Foggia · Marcianise · Muggia · Rubbiano</td><td>Italia</td><td>pasta, sughi</td><td><span class="tg w">locale su corredo</span></td><td>medio ciascuno</td><td>standardizza da Parma, poi estendi</td></tr>
+<tr><td><b>Tebe</b></td><td>Grecia</td><td>pastificio</td><td><span class="tg w">locale</span></td><td>medio</td><td>referenza Parma → contatto diretto</td></tr>
+<tr><td><b>Bolu</b></td><td>Turchia</td><td>pastificio</td><td><span class="tg w">locale</span></td><td>medio</td><td>referenza Parma + partner logistico</td></tr>
+<tr><td><b>Ames IA · Avon NY</b></td><td>USA</td><td>2 stabilimenti (replicano Parma)</td><td><span class="tg n">centrale NA</span></td><td>alto</td><td>vendor list Barilla America — lungo, grosso</td></tr>
+<tr><td><b>Montréal</b></td><td>Canada</td><td>produzione</td><td><span class="tg n">centrale NA</span></td><td>medio</td><td>stessa vendor list NA</td></tr>
+<tr><td><b>San Luis Potosí</b></td><td>Messico</td><td>produzione</td><td><span class="tg w">locale/LATAM</span></td><td>medio</td><td>partner locale; espansione recente = trigger</td></tr>
+</tbody></table>
+<div class="flag"><b>Perché questo vale oro:</b> essere fornitore di un'entità del gruppo rende l'approccio alle altre entità una <b>telefonata interna, non una cold call</b> — vale per Electrolux come per Barilla: il gruppo è già tuo cliente, devi solo farti presentare alla collega estera.</div>
+<div class="note">Autonomia stimata: da verificare per ogni entità (il discovery agent la classifica da organigrammi, annunci e gare; l'indirect spend è il confine tipico centralizzato/decentralizzato).</div>
+</div>
+</div>
+
+<div class="view" id="v10">
+<div class="editbar"><b>Cosa trovi qui:</b> inserisci alcuni dei tuoi clienti attivi — l'agente cerca nel mondo le aziende che fanno la stessa cosa (stessa categoria merceologica, stesso profilo d'uso del tuo prodotto) e te le consegna come lista di potenziali clienti, con paese, perché sono simili e fit. La logica: chi serve chi è simile ai tuoi clienti, può servire anche loro.</div>
+<div class="card">
+<div class="pt">I tuoi clienti attivi — il radar trova le aziende simili nel mondo</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input id="newsim" placeholder="Nome cliente attivo, es. Barilla" style="flex:1;min-width:220px">
+<button id="addsim" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer">Trova simili</button>
+</div>
+<table style="margin-top:8px"><thead><tr><th>Cliente inserito</th><th>Stato</th></tr></thead><tbody id="mysim">
+<tr><td><b>Barilla</b></td><td><span class="tg g">analisi completata — vedi esempio sotto</span></td></tr>
+</tbody></table>
+</div>
+<div class="card" style="margin-top:12px;display:none">
+<div class="pt">Esempio di output: aziende simili a "Barilla (pasta secca)" — globali, ordinate per fit</div>
+<table><thead><tr><th>Azienda simile</th><th>Paese</th><th>Perché è simile</th><th>Fit</th></tr></thead><tbody>
+<tr><td><b>De Cecco</b></td><td>Italia</td><td>pasta secca, stesso identikit cliente</td><td><b>91</b></td></tr>
+<tr><td><b>Garofalo</b> (LVMH)</td><td>Italia</td><td>pasta premium, esportazione forte</td><td><b>88</b></td></tr>
+<tr><td><b>Pastificio Rana</b></td><td>Italia</td><td>pasta fresca/derivati, multi-sede</td><td><b>86</b></td></tr>
+<tr><td><b>La Molisana</b></td><td>Italia</td><td>pasta secca, brand in crescita</td><td><b>84</b></td></tr>
+<tr><td><b>Divella</b></td><td>Italia</td><td>pasta secca, Sud + export</td><td><b>80</b></td></tr>
+<tr><td><b>Ebro Foods</b></td><td>Spagna</td><td>primo gruppo rice/pasta EU</td><td><b>78</b></td></tr>
+<tr><td><b>San Remo</b></td><td>Australia</td><td>pasta secca, mercato ANZ</td><td><b>72</b></td></tr>
+<tr><td><b>Campbell's</b></td><td>USA</td><td>pasta e sughi, multi-impianto</td><td><b>70</b></td></tr>
+</tbody></table>
+<div class="note">Esempio di formato output (demo). Per ogni tuo cliente inserito, il motore produce una lista così: stessa categoria, stesso uso del tuo prodotto, ordinata per fit — con i flag ✕/★ come negli altri elenchi.</div>
+</div>
+</div>
+
+<div class="view" id="v6">
+<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="cfilt"></div>
+<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="ccty"></div>
+<div id="cstatus" style="display:none;margin-bottom:8px;font-size:12px;color:var(--tx3);align-items:center;gap:8px"><span class="rd"><i></i></span><span class="step">ricerca avviata...</span></div>
+<div class="card">
+<div class="pt" id="cptitle">Clienti potenziali in Italia — fit stimato sugli identikit</div>
+<table><thead><tr><th>Azienda</th><th>Segmento</th><th>Perché / angolo</th><th style="width:130px">Fit</th><th></th></tr></thead><tbody id="cbody"></tbody></table>
+</div>
+</div>
+
+<div class="view" id="v7">
+<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="kfilt"></div>
+<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="kcty"></div>
+<div class="card">
+<div class="pt">Concorrenza per modello produttivo e paese — landscape (il motore verifica dimensioni, clienti, debolezze)</div>
+<table><thead><tr><th>Azienda</th><th>Paese</th><th>Modello</th><th>Lettura</th></tr></thead><tbody id="kbody"></tbody></table>
+</div>
+</div>
+
+<div class="view" id="v3">
+<div class="card">
+<div class="pt">Ranking mercati · "Approfondisci" apre il quadro del paese; "Attiva radar" lancia la ricerca completa</div>
+<table>
+<thead><tr><th>Mercato</th><th>Driver (numero, fonte)</th><th>Ingresso</th><th>Score</th><th>Fase</th><th></th></tr></thead>
+<tbody id="ctbody">
+<tr><td><b>Francia</b></td><td>2° importatore workwear UE: €407M/anno; cultura uniformi premium</td><td>agente + fiere, nessuna barriera UE</td><td>78</td><td><span class="tg g">ora</span></td><td><button class="chip cbtn" data-c="fr" data-ll="46.5,2">Approfondisci ▸</button></td></tr>
+<tr><td><b>Polonia</b></td><td>€148M, +12,9%/anno; nearshoring manifatturiero</td><td>partner/agente locale</td><td>72</td><td><span class="tg g">ora</span></td><td><button class="chip cbtn" data-c="pl" data-ll="52,19">Approfondisci ▸</button></td></tr>
+<tr><td><b>Benelux</b></td><td>€441M combinati; leader sostenibilità e circolarità</td><td>attenzione distorsione hub</td><td>60</td><td><span class="tg w">selettivo</span></td><td><button class="chip cbtn" data-c="bx" data-ll="50.5,4.5">Approfondisci ▸</button></td></tr>
+<tr><td><b>UK</b></td><td>promo $2,02 mld/anno, il più grande d'Europa</td><td>dogana post-Brexit; e-commerce come chiave</td><td>58</td><td><span class="tg w">fase 2</span></td><td><button class="chip cbtn" data-c="uk" data-ll="54,-2">Approfondisci ▸</button></td></tr>
+<tr><td><b>Germania</b></td><td>1° mercato UE (€628M) ma incumbent feroci</td><td>solo vertice premium brand-sensitive</td><td>55</td><td><span class="tg w">selettivo</span></td><td><button class="chip cbtn" data-c="de" data-ll="51,10">Approfondisci ▸</button></td></tr>
+<tr><td><b>Nordici</b></td><td>sostenibilità come criterio d'acquisto; rental in crescita</td><td>nicchia premium piccola</td><td>52</td><td><span class="tg n">fase 3</span></td><td><button class="chip cbtn" data-c="nd" data-ll="60,15">Approfondisci ▸</button></td></tr>
+<tr><td><b>GCC</b></td><td>pipeline infrastrutture, workforce in crescita</td><td>partner locale obbligatorio</td><td>45</td><td><span class="tg n">copertura</span></td><td><button class="chip cbtn" data-c="gcc" data-ll="24,47">Approfondisci ▸</button></td></tr>
+<tr><td><b>USA</b></td><td>mercato enorme ma Cintas/Aramark dominano</td><td>non per questa scala</td><td>35</td><td><span class="tg n">fuori</span></td><td><button class="chip cbtn" data-c="us" data-ll="39,-98">Approfondisci ▸</button></td></tr>
+</tbody></table>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+<input id="newctry" placeholder="Aggiungi un paese non in elenco, es. Giappone" style="flex:1;min-width:240px;font-size:12.5px;padding:7px 12px">
+<button id="addctry" class="chip">Richiedi analisi</button>
+<span class="note" style="margin:0">Il paese entra in analisi e divina mappato nel ciclo successivo.</span>
+</div>
+<div id="cdetail" style="display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<div id="cdtitle" style="font-size:15px;font-weight:600"></div>
+<button class="chip" id="cdmap" style="color:var(--ac)">Vedilo nella mappa →</button>
+</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:8px">
+<div><div class="pt">Potenziali clienti</div><div id="cdcli" style="font-size:12px;color:var(--tx2)"></div></div>
+<div><div class="pt">Competitor sul posto</div><div id="cdcomp" style="font-size:12px;color:var(--tx2)"></div></div>
+<div><div class="pt">Partner / segnalatori</div><div id="cdpart" style="font-size:12px;color:var(--tx2)"></div></div>
+<div><div class="pt">Il settore lì</div><div id="cdsec" style="font-size:12px;color:var(--tx2)"></div></div>
+</div>
+<div id="cdfullzone" style="display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+<button class="chip" id="cdactivate" style="color:var(--ac);border-color:var(--ac)">◎ Attiva radar su questo paese</button>
+<span id="cdprog" style="display:none;align-items:center;gap:8px;font-size:12px;color:var(--tx3)"><span class="rd"><i></i></span><span class="step">avvio ricerca...</span></span>
+</div>
+<div id="cdres" style="display:none;margin-top:10px">
+<div class="pt">Potenziali clienti — ricerca attiva · ✕ = non interessante (ricordato per sempre) · ★ = già cliente</div>
+<div id="cdlist"></div>
+<div style="display:flex;gap:10px;margin-top:8px;align-items:center;flex-wrap:wrap">
+<button class="chip" id="cdrefresh">Aggiorna ricerca</button>
+<button class="chip" id="cdshowhidden">Nascosti (0)</button>
+<span class="note" style="margin:0">L'agente affina a ogni giro senza mai riproporre ciò che hai scartato.</span>
+</div>
+<div class="pt" style="margin-top:14px">Notizie di settore per il paese (demo: tipologie di segnale — in produzione con data e fonte)</div>
+<div id="cdnewslist"></div>
+</div>
+</div>
+<div class="note">Nomi indicativi dal landscape — il discovery agent li verifica uno a uno prima della consegna. Dati di settore da report pubblici (fonti nel PDF dell'edizione).</div>
+</div>
+<div class="flag"><b>Logica "segui il cliente":</b> i brand italiani che aprono stabilimenti all'estero portano il bisogno di divise e merchandising con sé. La loro footprint incrociata con la spesa workwear per paese è la roadmap estera personalizzata.</div>
+</div>
+</div>
+
+<div class="view" id="v11">
+<div class="editbar"><b>Come funziona:</b> a sinistra descrivi l'organizzazione — reparti, persone, cosa fa ciascuno e i suoi problemi (tutto modificabile). A destra indica <b>il</b> problema aziendale principale e <b>il</b> obiettivo aziendale. L'agente propone una strategia custom che parte dall'organizzazione reale. In produzione ragiona sul radar e si aggiorna a ogni refresh.</div>
+<div class="grid">
+<div class="card">
+<div class="pt">Organizzazione — per ogni reparto: persone, cosa fa, problemi (tutto modificabile)</div>
+<div style="font-size:11.5px;color:var(--warn);margin-bottom:8px">⚠ I 6 reparti sotto sono ESEMPI del modello: riscrivili nei campi oppure eliminali con ✕ e aggiungi i tuoi. Quando salvi, diventano i tuoi dati.</div>
+<div id="deptlist" style="display:flex;flex-direction:column;gap:10px"></div>
+<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px">
+<div style="font-size:12px;color:var(--tx3);margin-bottom:6px">Aggiungi un reparto:</div>
+<input id="newdept" placeholder="Nome reparto, es. Customer care" style="width:100%;margin-bottom:6px;font-size:12.5px;padding:6px 10px">
+<div style="display:flex;gap:8px;margin-bottom:6px">
+<input id="newdeptn" type="number" min="0" placeholder="n. persone" style="width:110px;font-size:12.5px;padding:6px 8px">
+<input id="newdeptwhat" placeholder="Cosa fa il team" style="flex:1;font-size:12.5px;padding:6px 10px">
+</div>
+<input id="newdeptprob" placeholder="Problemi del team (opzionale)" style="width:100%;margin-bottom:8px;font-size:12.5px;padding:6px 10px">
+<button id="adddept" class="chip" style="border-color:var(--ac);color:var(--ac)">+ Aggiungi reparto</button>
+</div>
+<div class="pt" style="margin-top:10px">Totale forza lavoro: <b id="totdept">0</b></div>
+</div>
+<div class="card">
+<div class="pt">Il problema aziendale (il principale, concreto):</div>
+<textarea id="prob" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;color:var(--tx)">Fatturato in calo del 20% (2024→2025), margini netti ~1-2%, dipendenza da pochi clienti grandi</textarea>
+<div style="font-size:12px;color:var(--tx3);margin:8px 0 4px">L'obiettivo aziendale (misurabile, con orizzonte temporale):</div>
+<textarea id="goal" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;color:var(--tx)">Tornare a 18M€ di fatturato con margine netto ≥4% entro 24 mesi, diversificando il portafoglio clienti</textarea>
+<div style="margin-top:12px"><button id="genstrat" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:9px 18px;font:inherit;font-size:13px;cursor:pointer">Genera strategia custom</button>
+<button id="resetdemo" class="chip" title="cancella tutti i dati salvati dalla demo e ricarica">↺ Reset dati demo</button>
+<span id="stprog" style="display:none;align-items:center;gap:8px;font-size:12px;color:var(--tx3);margin-left:8px"><span class="rd"><i></i></span><span class="step">analisi organizzazione...</span></span></div>
+</div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="pt">Chat con l'agente strategico — aggiungi contesto, vincoli, idee: la strategia si adatta</div>
+<div id="chatlog" style="max-height:230px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+<div style="display:flex;gap:8px">
+<input id="chatmsg" placeholder="Es. abbiamo un forte legame col calcio giovanile della zona; oppure: non possiamo assumere prima del 2027" style="flex:1;font-size:12.5px;padding:8px 10px">
+<button id="chatsend" class="chip" style="border-color:var(--ac);color:var(--ac)">Invia</button>
+</div>
+<div class="note">In produzione l'agente legge le note e riformula la strategia riga per riga; qui la demo le registra e le cita.</div>
+</div>
+<div id="stratres" style="display:none;margin-top:12px" class="card">
+<div class="pt">Strategia proposta (demo: bozza sui dati inseriti — in produzione ragiona sul radar e si aggiorna ogni mese)</div>
+<div id="stratout" style="font-size:13px;line-height:1.7;color:var(--tx2)"></div>
+</div>
+</div>
+<div class="view" id="v4">
+<div class="card" style="position:relative;padding:0;overflow:hidden">
+<div class="pt" style="padding:12px 16px 0">Vista globale · mappa 3D vettoriale o satellite (in base al browser) · attiva/disattiva le categorie</div>
+<div id="omap" style="height:calc(100vh - 230px);min-height:480px;margin-top:8px"></div>
+<div class="mapfilter">
+<label><input type="checkbox" checked data-l="clienti"><span class="mk m2"></span>Clienti (siti)</label>
+<label><input type="checkbox" checked data-l="mercati"><span class="mk m1"></span>Mercati radar</label>
+<label><input type="checkbox" checked data-l="fornitori"><span class="mk m3"></span>Fornitori</label>
+<label><input type="checkbox" checked data-l="news"><span class="mk m5"></span>News di settore</label>
+</div>
+</div>
+</div>
+<script>
+window.addEventListener('error',function(ev){var b=document.getElementById('errbanner');
+if(!b){b=document.createElement('div');b.id='errbanner';
+b.style.cssText='position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:#fff;padding:6px 12px;font-size:12px;z-index:99999';
+document.body.appendChild(b);}
+b.textContent='JS error: '+ev.message+' (riga '+(ev.lineno||'?')+') — build 14:55';});
+
+
+/* ===== COMPANY-AWARE LAYER ===== */
+(function(){
+var q=new URLSearchParams(location.search);
+var slug=q.get('company')||'audes';
+window.CO_SLUG=slug;
+fetch('data/'+slug+'.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+window.CO_DATA=d;
+document.getElementById('co-title').textContent=d.name||slug;
+document.title='Radar B2B — '+(d.name||slug);
+if(d.profile){
+ var p=d.profile;
+ document.getElementById('co-sede').textContent=p.sede||d.name;
+ document.getElementById('co-pres').textContent=p.presidente||'—';
+}
+if(d.panoramica){
+ document.getElementById('co-fatt').textContent=d.panoramica.fatturato||'—';
+try{applyCompanyData(d);}catch(e){}
+ var b=document.getElementById('cobanner');
+ if(slug!=='audes'){
+  b.style.display='block';
+  b.innerHTML='<b>'+(d.name||'')+'</b> — profilata dal motore: tipo <b>'+(d.type||'?')+'</b>. '
+  +(d.type==='T1'?'Mercato reale sotto (Comtrade). ':'')
+  +'Le sezioni dettagliate (clienti, concorrenti, strategia) si popolano con il discovery agent nei run notturni successivi.';
+ }
+}
+}).catch(function(e){
+ var b=document.getElementById('cobanner');b.style.display='block';
+ b.innerHTML='Dati non trovati per questa azienda — lancia il workflow (Actions → engine → Run workflow) o attendi il run notturno.';
+});
+})();
+
+/* ===== LIVE DATA LAYER ===== */
+fetch('data/audes.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+document.getElementById('livdate').textContent=(d.updated||'').slice(0,16).replace('T',' ')||'—';
+var lc=document.getElementById('livecard');lc.style.display='block';
+if(d.cosa_e_cambiato)document.getElementById('livediff').innerHTML=d.cosa_e_cambiato.map(function(x){
+ return '<div class="row"><span class="tg '+(x.tag==='azione'?'g':x.tag==='segnale'?'w':'n')+'">'+x.tag+'</span><span style="flex:1;color:var(--tx2)">'+x.text+'</span></div>'}).join('');
+if(d.dove_andare)document.getElementById('livedove').innerHTML=d.dove_andare.map(function(m){
+ return '<div class="row"><b style="width:100px">'+m.m+'</b><div class="mtrack"><div class="mfill" style="width:'+m.s+'%"></div></div><b style="width:24px;text-align:right">'+m.s+'</b><span class="tg n">'+m.f+'</span></div>'}).join('');
+}).catch(function(e){document.getElementById('livdate').textContent='file non trovato (lancia il workflow)';});
+
+
+/* ===== CLEAN MODE: svuota i contenitori a boot ===== */
+try{document.getElementById('cbody').innerHTML='';document.getElementById('kbody').innerHTML='';
+document.getElementById('ctbody').innerHTML='';}catch(e){}
+/* ===== CLEAN MODE: riempie le sezioni dal JSON azienda ===== */
+function esc2(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function emptyRow(msg){return '<div class="row"><span class="tg n">vuoto</span><span style="flex:1;color:var(--tx3)">'+esc2(msg)+'</span></div>'}
+function applyCompanyData(d){
+var verif='<span class="tg n" style="margin-left:6px">generato dal motore · da verificare</span>';
+var pc=document.getElementById('pancards');
+if(d.mercato){pc.innerHTML='<div><span class="num">'+d.mercato.tot_ktons+' kt</span>mercato importato ('+d.mercato.anno+') — dati reali</div>'
+ +'<div><span class="num">€ '+d.mercato.tot_bn_eur+' mld</span>valore CIF</div>';}
+else if(d.panoramica){pc.innerHTML='<div><span class="num" style="font-size:14px">'+esc2(d.panoramica.fatturato)+'</span>fatturato</div>'
+ +'<div><span class="num" style="font-size:14px">'+esc2(d.panoramica.dipendenti)+'</span>persone</div>';}
+else pc.innerHTML='<div class="pt" style="grid-column:1/-1">Panoramica: in attesa del primo run notturno del motore.</div>';
+if(d.segmenti&&d.segmenti.length){pc.innerHTML+=d.segmenti.slice(0,3).map(function(m){return '<div><span class="num" style="font-size:14px">'+esc2(m.n)+'</span>fit '+m.v+'/100</div>'}).join('');}
+var cb=document.getElementById('cbody');
+if(d.clienti&&d.clienti.length){cb.innerHTML=d.clienti.map(function(c){
+ return '<tr><td><b>'+esc2(c.n)+'</b></td><td><span class="tg n">'+esc2(c.s)+'</span></td><td style="color:var(--tx2)">potenziale cliente'+verif+'</td>'
+ +'<td><div style="display:flex;gap:6px;align-items:center"><div class="tr"><div style="width:'+c.v+'%"></div></div><b>'+c.v+'</b></div></td><td></td></tr>'}).join('');}
+else cb.innerHTML='<tr><td colspan="5">'+emptyRow('Il motore popola questa lista dopo il primo run (discovery agent, etichettato da verificare).')+'</td></tr>';
+var kb=document.getElementById('kbody');
+if(d.competitors&&d.competitors.length){kb.innerHTML=d.competitors.map(function(c){
+ return '<tr><td><b>'+esc2(c.n)+'</b></td><td><span class="tg n">'+esc2(c.paese||'?')+'</span></td><td><span class="tg n">competitor</span></td><td style="color:var(--tx2)">'+esc2(c.nota||'')+verif+'</td></tr>'}).join('');}
+else kb.innerHTML='<tr><td colspan="4">'+emptyRow('Competitor: in attesa del motore.')+'</td></tr>';
+var ct=document.getElementById('ctbody');
+if(d.dove_andare&&d.dove_andare.length){ct.innerHTML=d.dove_andare.map(function(m){
+ return '<tr><td><b>'+esc2(m.m)+'</b></td><td style="color:var(--tx2)">valutato dal motore'+verif+'</td><td>—</td><td>'+m.s+'</td><td><span class="tg n">'+esc2(m.f)+'</span></td><td></td></tr>'}).join('');}
+if(d.strategy){document.getElementById('stratres').style.display='block';
+ document.getElementById('stratout').innerHTML='<div class="pt">Strategia proposta dal motore '+verif+'</div><div style="font-size:13px;white-space:pre-wrap">'+esc2(d.strategy)+'</div>';}
+if(d.cosa_e_cambiato&&d.cosa_e_cambiato.length){var lc=document.getElementById('livecard');lc.style.display='block';
+ document.getElementById('livediff').innerHTML=d.cosa_e_cambiato.map(function(x){
+ return '<div class="row"><span class="tg '+(x.tag==='azione'?'g':x.tag==='segnale'?'w':'n')+'">'+x.tag+'</span><span style="flex:1;color:var(--tx2)">'+esc2(x.text)+'</span></div>'}).join('');}
+}
+
+/* ===== 1. UI CORE ===== */
+document.querySelectorAll('.tabs button[data-v]').forEach(function(b){b.onclick=function(){
+ document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});
+ document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('on',v.id===b.dataset.v)});
+ if(b.dataset.v==='v4')initMap();
+ if(b.dataset.v==='v11'){try{drawD();drawChat();}catch(e){}}
+ if(window.map)setTimeout(function(){map.resize()},320);}});
+document.getElementById('theme').onclick=function(){
+ document.body.classList.toggle('light');
+ if(window.map)setTimeout(function(){map.resize()},320);
+ if(window.swapTiles)swapTiles();};
+function getLS(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
+function setLS(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+/* ===== 2. IDENTIKIT ===== */
+var IDK=[
+{n:"PMI manifatturiera",v:{"Dimensione":"20–250 dipendenti","Settori tipici":"metalmeccanica, legno-arredo, plastica, agroalimentare","Geografia":"Nord-Est e Centro prima ondata","Budget ordine":"3–15k€","Ricorrenza":"annuale / cicli sostituzione","Decision maker":"titolare o amministratore","Influencer":"RSPP, consulente sicurezza","Trigger d'ingresso":"nuova assunzione, nuova sede, rebranding","Ciclo decisionale":"2–6 settimane","Obiezione n.1":"«ho già il mio fornitore di fiducia» → secondo fornitore + lotto prova","Canale preferito":"RSPP/consulenti, agente locale, SEM","Margine atteso":"medio-alto"}},
+{n:"Grande impresa industriale",v:{"Dimensione":"500+ dipendenti","Settori tipici":"auto, meccanica pesante, energia","Budget ordine":"50–300k€","Ricorrenza":"contratto quadro 2–4 anni","Decision maker":"Facility / Procurement","Influencer":"HR, HSE, ufficio dotazioni","Trigger d'ingresso":"gara riordino, cambio gestione facility","Ciclo decisionale":"3–9 mesi","Obiezione n.1":"«qualificatevi come fornitori» → e-commerce dedicato come prova","Canale preferito":"qualificazione fornitore + case study","Margine atteso":"basso su volume, alto su servizio"}},
+{n:"Logistica & GDO",v:{"Dimensione":"200–2000 dipendenti/sede","Settori tipici":"hub logistici, supermercati, retail","Budget ordine":"10–80k€","Ricorrenza":"semestrale (turnover personale)","Decision maker":"Facility manager, direttore di sede","Influencer":"HR, agenzie somministrazione","Trigger d'ingresso":"apertura nuovo hub/punto vendita","Ciclo decisionale":"4–10 settimane","Obiezione n.1":"«il centro decide» → entrare da una sede pilota","Canale preferito":"diretto sede + agente","Margine atteso":"medio"}},
+{n:"Hospitality & retail premium",v:{"Dimensione":"singole strutture o catene","Settori tipici":"hotel, resort, boutique, ristorazione alta","Budget ordine":"5–40k€","Ricorrenza":"stagionale + eventi","Decision maker":"GM, direttore F&B, brand manager","Influencer":"ufficio style/visual","Trigger d'ingresso":"apertura, restyling, cambio gestione","Ciclo decisionale":"3–8 settimane","Obiezione n.1":"«vogliamo un look unico» → è il posizionamento stesso","Canale preferito":"diretto, fiere hospitality, passaparola","Margine atteso":"alto"}},
+{n:"Sport & eventi",v:{"Dimensione":"società da dilettanti a pro","Settori tipici":"calcio, basket, volley, running, eventi","Budget ordine":"2–30k€","Ricorrenza":"stagionale","Decision maker":"presidente, segretario, licensing manager","Influencer":"maestri tecnici, sponsor","Trigger d'ingresso":"nuova stagione, cambio sponsor","Ciclo decisionale":"2–6 settimane","Obiezione n.1":"«il kit ce lo dà lo sponsor» → secondo set + merchandising","Canale preferito":"diretto, agenti sportivi, fiere","Margine atteso":"medio, alto sul merch"}}];
+var idk=document.getElementById('idk');
+IDK.forEach(function(a){var c=document.createElement('div');c.className='card';
+var hh='<div class="pt" style="font-size:13px;color:var(--tx);font-weight:600">'+a.n+' <span class="tg n" style="float:right">modificabile</span></div>';
+Object.keys(a.v).forEach(function(k){hh+='<div class="idv"><b>'+k+'</b><span contenteditable data-k="'+a.n+'|'+k+'">'+a.v[k]+'</span></div>'});
+c.innerHTML=hh;idk.appendChild(c);});
+document.getElementById('idk').addEventListener('input',function(e){var s=e.target;if(!s.dataset||!s.dataset.k)return;
+var st=getLS('idk');st[s.dataset.k]=s.innerText;setLS('idk',st);});
+
+/* ===== 3. CLIENTI (lista Italia + selettore paese) ===== */
+var CLI=[
+["Ferrari","Industria","brand iconico, workforce tecnico",88],["Ducati","Industria","Borgo Panigale + merchandising enorme",86],
+["CNH Industrial","Industria","stabilimenti multipli, workwear tecnico",74],["Iveco","Industria","divise+merch dealer network",72],
+["Piaggio","Industria","workwear produzione + brand retail",70],["Leonardo","Industria","facility grandi, compliance spinta",66],
+["Danieli","Industria","workforce metalmeccanica",70],["Prysmian","Industria","stabilimenti cavi, safety-driven",68],
+["Barilla","Industria","food safety = divise certificate",82],["Ferrero","Industria","employer brand fortissimo",84],
+["Lavazza","Industria","Torino + caffetterie corporate",76],["Illy","Industria","Trieste, premium hospitality",72],
+["Campari","Industria","brand-sensitive, eventi",70],["Mapei","Industria","cantiere+corredo",66],
+["Webuild","Industria","cantiere = workwear a ciclo",64],["Poste Italiane / SDA","Logistica","~120k dipendenti",78],
+["BRT","Logistica","turnover divise alto",74],["GLS Italy","Logistica","hub in crescita",70],
+["DHL Italia","Logistica","standard globali",70],["Amazon Italia","Logistica","workforce enorme",76],
+["Trenitalia / FS","Trasporti","~80k dipendenti",72],["ITA Airways","Trasporti","relaunch = rebranding",68],
+["Esselunga","GDO","~27k dipendenti, vetrina personale",80],["Conad","GDO","rete consortile",68],
+["Coop","GDO","decisioni distribuite",64],["Lidl Italia","GDO","espansione continua",72],
+["Luxottica","Retail","brand retail premium",74],["OVS","Retail","catena",66],
+["Enel","Utility","~60k dipendenti",72],["Snam","Utility","HSE-driven",66],
+["Terna","Utility","manutenzione rete",64],["Juventus","Sport","licensing + staff",78],
+["Inter","Sport","merch + staff",76],["Milan","Sport","merch + partnership",76],
+["Napoli","Sport","brand in ascesa",70],["Società calcistiche C/D","Sport","migliaia, zero presidio",74],
+["Accor Italia","Hospitality","catena hotel premium",72],["Gruppo UNA","Hospitality","restyling continui",66],
+["Menarini","Pharma","laboratori niche",64],["Chiesi","Pharma","facility",62],
+["— migliaia di PMI —","PMI","estrazione dal registro su identikit",0]];
+var segs=['tutti','Industria','Logistica','Trasporti','GDO','Retail','Utility','Sport','Hospitality','Pharma','PMI'];
+var cf=document.getElementById('cfilt'),segF='tutti';
+segs.forEach(function(s){var b=document.createElement('button');b.className='chip'+(s==='tutti'?' on':'');b.textContent=s;
+b.onclick=function(){segF=s;Array.prototype.forEach.call(cf.children,function(x){x.classList.toggle('on',x===b)});drawCli()};cf.appendChild(b)});
+var CTYMAP={fr:'Francia',pl:'Polonia',uk:'UK',de:'Germania',bx:'Benelux'};
+var ccty=document.getElementById('ccty'),ctySel='it';
+['Italia','Francia','Polonia','UK','Germania','Benelux'].forEach(function(s){var b=document.createElement('button');b.className='chip'+(s==='Italia'?' on':'');b.textContent=s;
+b.onclick=function(){ctySel=s;Array.prototype.forEach.call(ccty.children,function(x){x.classList.toggle('on',x===b)});drawCli()};ccty.appendChild(b)});
+function drawCli(){
+ var tb=document.getElementById('cbody');tb.innerHTML='';
+ if(ctySel==='it'){
+  document.getElementById('cptitle').textContent='Clienti potenziali in Italia — fit stimato sugli identikit';
+  document.getElementById('cfilt').style.display='';
+  CLI.filter(function(c){return segF==='tutti'||c[1]===segF}).forEach(function(c){
+   var r=document.createElement('tr');
+   r.innerHTML='<td><b>'+c[0]+'</b></td><td><span class="tg n">'+c[1]+'</span></td><td style="color:var(--tx2)">'+c[2]+'</td><td>'+(c[3]?'<div style="display:flex;align-items:center;gap:6px"><div class="tr"><div style="width:'+c[3]+'%"></div></div><b>'+c[3]+'</b></div>':'<span class="tg n">estrazione</span>')+'</td><td></td>';
+   tb.appendChild(r)});}
+ else{
+  document.getElementById('cfilt').style.display='none';
+  var code=Object.keys(CTYMAP).filter(function(k){return CTYMAP[k]===ctySel})[0];
+  document.getElementById('cptitle').textContent='Clienti potenziali · '+ctySel+' — ricerca attiva con flag ✕/★';
+  var st=document.getElementById('cstatus');st.style.display='flex';
+  runSteps(st.querySelector('.step'),['ricerca attiva sul paese...','census aziende per identikit...','stima fit...'],function(){
+   st.style.display='none';
+   CD[code].full.split(';').forEach(function(x){var a=x.split('|');
+    var key=code+'|'+a[0],bl=getLS('hidden');
+    if(bl.indexOf(key)>=0)return;
+    var r=document.createElement('tr');
+    r.innerHTML='<td><b>'+a[0]+'</b></td><td><span class="tg n">'+a[1]+'</span></td><td style="color:var(--tx2)">ricerca attiva su identikit</td><td><div style="display:flex;align-items:center;gap:6px"><div class="tr"><div style="width:'+a[2]+'%"></div></div><b>'+a[2]+'</b></div></td>'
+     +'<td><button class="chip" onclick="hideKey(\''+key+'\')">✕</button> <button class="chip" onclick="markMine(\''+key+'\')">★</button></td>';
+    tb.appendChild(r)});});}}
+window.hideKey=function(key){var l=getLS('hidden');if(l.indexOf(key)<0)l.push(key);setLS('hidden',l);drawCli();if(curCode)renderCDList(curCode,false)};
+window.markMine=function(key){var m=getLS('myclients');if(m.indexOf(key)<0)m.push(key);setLS('myclients',m);
+ var nm=getCL();var disp=key.split('|')[1];if(!nm.some(function(x){return x.n===disp})){nm.push({n:disp,t:Date.now(),done:false});setCL(nm);drawMyCli();}
+ drawCli();if(curCode)renderCDList(curCode,false)};
+drawCli();
+
+/* ===== 4. CONCORRENTI (filtro livello + paese) ===== */
+var K=[
+["Lanzi Group","Italia","A · progetto+produzione","posizionamento identico: battaglia su e-commerce/licensing/teamwear",1],
+["Cast Bolzonella","Italia","A · progetto+produzione","NO agenti → rete libera",1],
+["Maior Group","Italia","A · progetto+produzione","sostenibilità certificata",1],
+["Exclama","Italia","A · progetto+produzione","collezioni coordinate",1],
+["Publitalia","Italia","A · ibrido","capi partner + linee ad hoc",1],
+["Riccitelli Milano","Italia","A · niche","luxury hospitality",1],
+["Modit Group","Italia","A · produzione","workwear",1],
+["Leografic","Italia","B · personalizza terzi","piccolo ordine",2],
+["LTN Italia","Italia","B · personalizza terzi","velocità",2],
+["StampaSi","Italia","B · personalizza terzi","prezzo online",2],
+["King Sportwear","Italia","B · personalizza terzi","teamwear",2],
+["Italia Divise","Italia","B · catalogo","pronto",2],
+["Print-on-demand","vari","C · self-service","dal basso",3],
+["Lafont","Francia","A · produzione","workwear storico FR",1],
+["Elis","Francia","Rental","lock-in, forte FR/ES/IT",2],
+["LMA / Helys","Francia","A · produzione","brand nazionali",1],
+["Lahti Pro","Polonia","A · produzione","brand PL",1],
+["Cerva","Cechia/Polonia","A · produzione","forte CEE",1],
+["Portwest","Irlanda/UK","A · produzione","leader value UK/IE",1],
+["4imprint","UK","Distributor","gigante promo UK",3],
+["Leo Workwear","UK","B · personalizza terzi","hivis UK",2],
+["Pulsar","UK","A · produzione","safety UK",1],
+["Aramark UK","USA/UK","Rental","uniform services",2],
+["Engelbert Strauss","Germania","A · progetto+produzione","dominante DACH",1],
+["Fristads","Svezia","A · produzione","premium EU",1],
+["Kübler / Planam / Würth Modyf","Germania","A · produzione","brand DE",1],
+["Dassy","Belgio","A · progetto+produzione","workwear progettato BE",1],
+["Havep","Paesi Bassi","A · produzione","brand NL",1],
+["CWS","Paesi Bassi","Rental","gigante rental EU",2],
+["Blåkläder / Snickers","Svezia","A · produzione","blocco nordico",1]];
+var kfs=['tutti','Livello A','Rental/Distr.','Livello B-C'],kF='tutti';
+var kf=document.getElementById('kfilt');
+kfs.forEach(function(s){var b=document.createElement('button');b.className='chip'+(s==='tutti'?' on':'');b.textContent=s;
+b.onclick=function(){kF=s;Array.prototype.forEach.call(kf.children,function(x){x.classList.toggle('on',x===b)});drawK()};kf.appendChild(b)});
+var KCTY=['tutti','Italia','Francia','Polonia','UK','Germania','Nordici','Altro'],kC='tutti';
+var kcty=document.getElementById('kcty');
+KCTY.forEach(function(s){var b=document.createElement('button');b.className='chip'+(s==='tutti'?' on':'');b.textContent=s;
+b.onclick=function(){kC=s;Array.prototype.forEach.call(kcty.children,function(x){x.classList.toggle('on',x===b)});drawK()};kcty.appendChild(b)});
+function kCountry(c){if(/Italia/.test(c))return 'Italia';if(/Francia/.test(c))return 'Francia';if(/Polonia|Cechia/.test(c))return 'Polonia';if(/UK|Irlanda/.test(c))return 'UK';if(/Germania/.test(c))return 'Germania';if(/Svezia|Belgio|Paesi Bassi/.test(c))return 'Nordici';return 'Altro'}
+function drawK(){var tb=document.getElementById('kbody');tb.innerHTML='';
+K.filter(function(c){if(kC!=='tutti'&&kCountry(c[1])!==kC)return false;
+ if(kF==='tutti')return true;if(kF==='Livello A')return c[4]===1;if(kF==='Rental/Distr.')return c[2].indexOf('Rental')>=0||c[2].indexOf('Distributor')>=0;return c[4]>1}).forEach(function(c){var r=document.createElement('tr');
+r.innerHTML='<td><b>'+c[0]+'</b></td><td><span class="tg n">'+c[1]+'</span></td><td>'+(c[4]===1?'<span class="tg w">'+c[2]+'</span>':'<span class="tg n">'+c[2]+'</span>')+'</td><td style="color:var(--tx2)">'+c[3]+'</td>';
+tb.appendChild(r)})}
+drawK();
+
+/* ===== 5. DOVE ANDARE ===== */
+var CD={
+fr:{t:'Francia · 78 · ora',ll:[46.5,2],cli:'<b>Costruzioni</b>: Vinci, Bouygues, Eiffage<br><b>GDO</b>: Carrefour, Auchan<br><b>Hospitality</b>: Accor<br><b>Trasporti</b>: SNCF, RATP',comp:'<b>Lafont</b> — workwear storico<br><b>LMA</b>, <b>Helys</b><br><b>Elis</b> — rental lock-in',part:'Médecins du travail<br>Agenzie interinale<br>CCI',sec:'Cultura della divisa forte in retail e lusso; import workwear €407M/anno; gare di riordino annuali; trend "uniforme = branding".',
+ full:'Vinci|Costruzioni|76;Bouygues|Costruzioni|74;Eiffage|Costruzioni|72;Carrefour|GDO|80;Auchan|GDO|70;Accor|Hospitality|84;LVMH (hotel)|Hospitality|82;SNCF|Trasporti|74;RATP|Trasporti|70;Air France|Trasporti|68;EDF|Utility|64;Stellantis|Industria|70;Kuehne+Nagel FR|Logistica|62;Edenred|Servizi|58',
+ extra:'Sodexo|Servizi|60;FNAC Darty|Retail|58',
+ news:'Gare riordino divise nei grandi datori|ciclo annuale|normativa;Normativa DPI UE — scadenze sostituzione|normativa;Trend "uniforme = branding" nel retail premium|trend;Ripresa hospitality — aperture hotel|evento;Centri logistici GDO in espansione|evento'},
+pl:{t:'Polonia · 72 · ora',ll:[52,19],cli:'<b>Auto</b>: VW Poznań, Stellantis<br><b>Logistica</b>: Amazon PL, DHL<br><b>Retail</b>: Żabka, LPP, Biedronka',comp:'<b>Lahti Pro</b> — brand PL<br><b>Cerva</b> (CZ)<br>Importatori DE<br>Rental poco diffuso',part:'Studi contabili/HR<br>Izby gospodarcze<br>Agenti B2B locali',sec:'Crescita +12,9%/anno da nearshoring e logistica; sensibilità al prezzo ma domanda di qualità in salita; spazio per il modello diretto.',
+ full:'VW Poznań|Auto|78;Stellantis Gliwice|Auto|74;Amazon PL|Logistica|80;DHL Supply Chain PL|Logistica|72;Żabka|Retail|76;LPP|Retail|72;Biedronka|GDO|74;Kaufland PL|GDO|66;Nestlé PL|Industria|66;LG Energy Wrocław|Industria|70;InPost|Logistica|68;Orlen|Energy|60',
+ extra:'Allegro|Tech/Log|56;Żabka Nano|Retail|64',
+ news:'Record FDI manifatturiere — annunci impianti|evento;Boom magazzini logistici — assunzioni|evento;Salari in crescita → employer branding|trend;Scadenze appalti infrastrutture|evento;Crescita retail organizzato|trend'},
+uk:{t:'UK · 58 · fase 2',ll:[54,-2],cli:'<b>NHS</b> ~1,5M dip.<br><b>Royal Mail</b><br><b>Retail</b>: Tesco, Sainsbury<br><b>Amazon UK</b>',comp:'<b>Portwest</b> (IE)<br><b>Dickies</b>, <b>Leo</b>, <b>Pulsar</b><br><b>4imprint</b> promo<br><b>Aramark</b> rental',part:'Consulenti H&S<br>Recruitment agencies<br>Portali procurement NHS',sec:'Mercato maturo: NHS domanda istituzionale via tender; attenzione a dogana e UKCA post-Brexit; carenza staff hospitality = kit rapidi.',
+ full:'NHS Trusts|Healthcare|80;Royal Mail|Logistica|74;Amazon UK|Logistica|76;Tesco|GDO|78;Sainsbury|GDO|72;ASDA|GDO|68;DHL UK|Logistica|70;Yodel|Logistica|62;Balfour Beatty|Costruzioni|64;BT Group|Telecom|58;Marriott UK|Hospitality|66;Wetherspoon|Hospitality|60',
+ extra:'Jaguar Land Rover|Auto|62;Greggs|Food retail|60',
+ news:'Tender uniformi NHS per trust|evento;Post-Brexit: UKCA sui DPI|normativa;Carenza staff hospitality|trend;Logistica e-commerce in crescita|trend'},
+de:{t:'Germania · 55 · selettivo',ll:[51,10],cli:'<b>Auto</b>: VW, BMW, Mercedes<br><b>Industria</b>: Siemens, Bosch<br><b>Trasporti</b>: DB, DHL',comp:'<b>Engelbert Strauss</b> dominante<br><b>Fristads</b>, <b>Kübler</b>, <b>Planam</b>, <b>Modyf</b>',part:'Sicherheitsfachkräfte esterne<br>Handelskammern<br>Agenti premium',sec:'Più grande mercato UE (€628M) ma incumbent feroci; solo vertice premium/hospitality lusso; Supply Chain Act premia tracciabilità.',
+ full:'VW Wolfsburg|Auto|58;BMW München|Auto|60;Mercedes Sindelfingen|Auto|58;Siemens|Industria|56;Bosch Stuttgart|Industria|56;Deutsche Bahn|Trasporti|62;DHL|Logistica|58;Aldi Süd|GDO|54;Lidl DE|GDO|54;Rewe|GDO|52;BASF|Chimica|48;Munich Airport|Trasporti|60',
+ extra:'SAP Walldorf|Tech|44;Lufthansa Technik|Trasporti|58',
+ news:'Supply Chain Act → tracciabilità|normativa;Workwear come employer branding|trend;Trend rental/circolare|trend;Decarbonizzazione industria|evento'},
+bx:{t:'Benelux · 60 · selettivo',ll:[50.5,4.5],cli:'<b>Porto Rotterdam</b><br><b>KLM</b><br><b>Retail</b>: Albert Heijn, Jumbo<br><b>Tech</b>: fornitori ASML',comp:'<b>Dassy</b> (BE)<br><b>Havep</b> (NL)<br><b>Elis</b>, <b>CWS</b> rental',part:'Network facility manager<br>Consulenti sostenibilità',sec:'Test bed della sostenibilità: gare con requisiti CO2/circolarità; margini buoni sul progetto; logistica portuale = volumi.',
+ full:'Port of Rotterdam|Logistica|72;KLM|Trasporti|70;Albert Heijn|GDO|72;Jumbo|GDO|66;Colruyt|GDO|62;Delhaize|GDO|62;ASML (fornitori)|Tech|54;BAM Groep|Costruzioni|60;Heineken|Industria|64;PostNL|Logistica|60',
+ extra:'Eindhoven Airport|Trasporti|56;KBC staff services|Servizi|50',
+ news:'Gare con requisiti CO2/circolarità|normativa;Tender portuali e infrastrutture|evento;Workwear-as-a-service trend|trend'},
+nd:{t:'Nordici · 52 · fase 3',ll:[60,15],cli:'Industria pulita, healthcare pubblico<br>Catene retail sostenibili',comp:'<b>Fristads</b>, <b>Blåkläder</b>, <b>Snickers</b>',part:'Consulenti HSE<br>Reti sostenibilità',sec:'Sostenibilità come criterio obbligatorio; rental in crescita; nicchie premium piccole ma margini alti.',
+ full:'Volvo Cars Göteborg|Auto|58;Scania Södertälje|Auto|56;Ericsson Stockholm|Tech|48;IKEA (store staff)|Retail|54;SAS|Trasporti|54;PostNord|Logistica|56;Stora Enso|Industria|52;ABB|Industria|50;H&M (HQ staff)|Retail|50',
+ extra:'Maersk Copenaghen|Logistica|48;Equinor|Energy|46',
+ news:'Sostenibilità obbligatoria in gara|normativa;Modello rental in crescita|trend;Carenza lavoro qualificato|trend'},
+gcc:{t:'GCC · 45 · copertura',ll:[24,47],cli:'Contractor infrastrutture (Aramco, NEOM)<br>Hospitality di lusso in rampa',comp:'Fornitori asiatici sul volume<br>Brand workwear globali',part:'Agente locale obbligatorio<br>Consultant locali',sec:'Pipeline infrastrutturale enorme, workforce in crescita; workwear tecnico richiesto; serve partner locale.',
+ full:'Aramco (contractor)|Energy|58;NEOM project|Infrastrutture|56;Emirates Group|Trasporti|62;Dubai Holding|Hospitality|58;QatarEnergy|Energy|52;ADNOC|Energy|52;Majid Al Futtaim|Retail|60;Almarai|Food|54',
+ extra:'Red Sea Global|Infrastrutture|54;Jeddah Central|Infrastrutture|52',
+ news:'Pipeline infrastrutture — workforce in crescita|evento;Richiesta workwear tecnico / heat-resistant|trend;Hospitality luxury in rampa|evento;Local content requirements|normativa'},
+us:{t:'USA · 35 · fuori perimetro',ll:[39,-98],cli:'Dominio Cintas/Aramark<br>Niche premium solo',comp:'<b>Cintas</b>, <b>Aramark</b> rental<br>Carhartt, Dickies brand',part:'—',sec:'Mercato consolidato attorno al rental; per una PMI italiana rapporto sforzo/opportunità sfavorevole.',
+ full:'Amazon US|Logistica|40;Walmart|GDO|38;UPS|Logistica|40;FedEx|Logistica|40;Marriott US|Hospitality|44;Hilton|Hospitality|42;Boeing|Industria|36;Ford|Auto|34;Target|GDO|36;Costco|GDO|36',
+ extra:'Tesla|Auto|30;Mayo Clinic|Healthcare|40',
+ news:'Rental dominance Cintas/Aramark|trend;OSHA — cicli sostituzione|normativa;Nearshoring messicano|evento'}};
+var curC=null,curCode=null,showHid=false;
+document.addEventListener('click',function(e){
+var b=e.target.closest?e.target.closest('.cbtn'):null;if(!b)return;
+var c=CD[b.dataset.c],d=document.getElementById('cdetail');
+curC=c.ll;curCode=b.dataset.c;showHid=false;
+d.style.display='block';
+document.getElementById('cdtitle').textContent=c.t;
+document.getElementById('cdcli').innerHTML=c.cli;
+document.getElementById('cdcomp').innerHTML=c.comp;
+document.getElementById('cdpart').innerHTML=c.part;
+document.getElementById('cdsec').innerHTML=c.sec;
+document.getElementById('cdmap').style.display=c.ll?'':'none';
+document.getElementById('cdfullzone').style.display='block';
+document.getElementById('cdres').style.display='none';
+document.getElementById('cdprog').style.display='none';
+document.getElementById('cdactivate').style.display='';
+d.scrollIntoView({behavior:'smooth',block:'nearest'});});
+document.getElementById('cdmap').onclick=function(){if(!curC)return;
+document.querySelector('[data-v=v4]').click();
+setTimeout(function(){var lat=+curC[0],lng=+curC[1];
+ if(window.map){try{map.flyTo({center:[lng,lat],zoom:5});}catch(e){}}
+ if(window.Lmap){try{Lmap.setView([lat,lng],5);}catch(e){}}},500);};
+/* radar attivo sul paese */
+var RADAR_STEPS=['scansione registri imprese...','lettura siti e stampa locale...','cross-check con gli identikit...','stima fabbisogno e fit...','verifica contatti disponibili...'];
+var radarTimer=null;
+function runSteps(el,steps,done){var i=0;el.textContent=steps[0];clearInterval(radarTimer);
+radarTimer=setInterval(function(){i++;if(i<steps.length){el.textContent=steps[i]}else{clearInterval(radarTimer);done()}},900);}
+function runRadar(done){var p=document.getElementById('cdprog');p.style.display='inline-flex';
+runSteps(p.querySelector('.step'),RADAR_STEPS,function(){p.style.display='none';done()});}
+document.getElementById('cdactivate').onclick=function(){this.style.display='none';
+runRadar(function(){document.getElementById('cdres').style.display='block';renderCDList(curCode,false);renderCDNews(curCode);
+document.getElementById('cdres').scrollIntoView({behavior:'smooth',block:'nearest'})});};
+document.getElementById('cdrefresh').onclick=function(){runRadar(function(){renderCDList(curCode,true)})};
+document.getElementById('cdshowhidden').onclick=function(){showHid=!showHid;renderCDList(curCode,false)};
+function renderCDList(code,withExtra){
+var c=CD[code];if(!c||!c.full)return;
+var bl=getLS('hidden'),mine=getLS('myclients');
+var items=c.full.split(';').map(function(x){var a=x.split('|');return{n:a[0],s:a[1],f:+a[2]}});
+if(withExtra&&c.extra)items=items.concat(c.extra.split(';').map(function(x){var a=x.split('|');return{n:a[0],s:a[1],f:+a[2],nuovo:true}}));
+var el=document.getElementById('cdlist');el.innerHTML='';
+var hiddenShown=0;
+items.forEach(function(it){
+var key=code+'|'+it.n,isH=bl.indexOf(key)>=0,isM=mine.indexOf(key)>=0;
+if(isH&&!showHid){hiddenShown++;return}
+var r=document.createElement('div');r.className='row';
+r.innerHTML='<div style="flex:1;min-width:0"><b>'+it.n+'</b> <span class="tg n">'+it.s+'</span>'+(it.nuovo?' <span class="tg g">nuovo</span>':'')+(isH?' <span class="tg n">nascosto</span>':'')+(isM?' <span class="tg g">già cliente</span>':'')+'</div>'
+ +'<div class="tr" style="max-width:70px"><div style="width:'+it.f+'%"></div></div><b style="width:22px;text-align:right">'+it.f+'</b>'
+ +'<button class="chip" onclick="hideKey(\''+key+'\')" title="non interessante — ricordato per sempre">✕</button>'
+ +'<button class="chip" onclick="markMine(\''+key+'\')" title="è un cliente mio">★</button>';
+el.appendChild(r);});
+document.getElementById('cdshowhidden').textContent='Nascosti ('+hiddenShown+')';}
+function renderCDNews(code){var c=CD[code];if(!c||!c.news)return;
+var el=document.getElementById('cdnewslist');el.innerHTML='';
+c.news.split(';').forEach(function(n){var a=n.split('|');
+var r=document.createElement('div');r.className='row';
+r.innerHTML='<span class="tg '+(a[1]==='normativa'?'w':a[1]==='evento'?'g':'n')+'">'+a[1]+'</span><span style="flex:1;color:var(--tx2)">'+a[0]+'</span>';
+el.appendChild(r);});}
+/* paese aggiunto: ricerca che si completa */
+var CT_STEPS=['accodato per analisi del motore...','raccolta dati di scambio e spesa...','census aziende e competitor...','calcolo score personalizzato...'];
+var ctTick=null;
+function getCT(){try{return JSON.parse(localStorage.getItem('newctry')||'[]')}catch(e){return[]}}
+function setCT(l){try{localStorage.setItem('newctry',JSON.stringify(l))}catch(e){}}
+function drawNew(){
+var l=getCT(),tb=document.getElementById('ctbody');
+Array.prototype.forEach.call(document.querySelectorAll('#ctbody tr[data-own]'),function(r){r.remove()});
+l.forEach(function(x,i){
+if(typeof x==='string')x={n:x,t:0,done:true};
+var tr=document.createElement('tr');
+var btnCell=x.done?'<button class="chip cbtn" data-c="ux'+i+'">Approfondisci ▸</button>':'';
+var status=x.done?'<span class="tg g">analisi demo completata</span>'
+ :'<span class="rd"><i></i></span><span class="step">'+CT_STEPS[0]+'</span>';
+tr.innerHTML='<td><b>'+String(x.n).replace(/[<>&]/g,'')+'</b></td><td colspan="3" style="display:flex;align-items:center;gap:8px">'+status+'</td><td>'+(x.done?'<span class="tg n">mappato</span>':'<span class="tg n">in analisi</span>')+'</td><td>'+btnCell+'</td>';
+tb.appendChild(tr);
+if(x.done)CD['ux'+i]={t:x.n+' · richiesta',ll:null,
+ cli:'Il motore estrae qui i potenziali clienti per i tuoi identikit (demo: da popolare).',
+ comp:'Competitor locali per modello produttivo (demo: da popolare).',
+ part:'Partner/segnalatori del paese (demo: da popolare).',
+ sec:'Quadro del settore nel paese: spesa, trend, normativa (demo: da popolare dal motore).'}});
+clearInterval(ctTick);
+ctTick=setInterval(function(){
+var ll=getCT(),changed=false,now=Date.now();
+ll.forEach(function(x,i){if(typeof x==='string')x={n:x,t:0,done:true};
+ if(!x.done&&now-x.t>11000){x.done=true;changed=true;}});
+if(changed){setCT(ll);drawNew();}
+else Array.prototype.forEach.call(document.querySelectorAll('#ctbody .step'),function(s){var k=CT_STEPS.indexOf(s.textContent);s.textContent=CT_STEPS[(k+1)%CT_STEPS.length]});
+},2600);}
+drawNew();
+document.getElementById('addctry').onclick=function(){var i=document.getElementById('newctry');var v=i.value.trim();if(!v)return;
+var l=getCT();l.push({n:v,t:Date.now(),done:false});setCT(l);i.value='';drawNew();};
+document.getElementById('newctry').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('addctry').click()});
+
+/* ===== 6. SEGUI IL CLIENTE ===== */
+function getCL(){try{var l=JSON.parse(localStorage.getItem('mycli')||'[]');return l.map(function(x){return typeof x==='string'?{n:x,t:0,done:true}:x})}catch(e){return[]}}
+function setCL(l){try{localStorage.setItem('mycli',JSON.stringify(l))}catch(e){}}
+var CL_STEPS=['ricerca nei registri imprese...','lettura siti, bilanci e stampa...','estrazione entità del gruppo...','classificazione autonomia...','stima fabbisogno e mossa...'];
+var clTick=null;
+function drawMyCli(){
+var l=getCL(),tb=document.getElementById('mycli');
+Array.prototype.forEach.call(document.querySelectorAll('#mycli tr[data-own]'),function(r){r.remove()});
+l.forEach(function(x,i){
+var r=document.createElement('tr');
+var status=x.done?'<span class="tg g">✓ mappato (demo — vedi formato Barilla)</span>'
+ :'<span class="rd"><i></i></span><span class="step">'+CL_STEPS[0]+'</span>';
+r.innerHTML='<td><b>'+String(x.n).replace(/[<>&]/g,'')+'</b></td><td style="display:flex;align-items:center;gap:8px">'+status+'</td>';
+tb.appendChild(r)});
+clearInterval(clTick);
+clTick=setInterval(function(){
+var ll=getCL(),changed=false,now=Date.now();
+ll.forEach(function(x,i){if(!x.done&&now-x.t>13000){x.done=true;changed=true;
+var rows=document.querySelectorAll('#mycli tr[data-own]');if(rows[i])rows[i].cells[1].innerHTML='<span class="tg g">✓ mappato (demo — vedi formato Barilla)</span>';}});
+if(changed)setCL(ll);
+else Array.prototype.forEach.call(document.querySelectorAll('#mycli .step'),function(s){var k=CL_STEPS.indexOf(s.textContent);s.textContent=CL_STEPS[(k+1)%CL_STEPS.length]});
+},2600);}
+drawMyCli();
+document.getElementById('addcli').onclick=function(){var i=document.getElementById('newcli');var v=i.value.trim();if(!v)return;
+var l=getCL();l.push({n:v,t:Date.now(),done:false});setCL(l);i.value='';drawMyCli();};
+document.getElementById('newcli').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('addcli').click()});
+
+/* ===== 7. RADAR AZIENDE SIMILI ===== */
+var SIM_STEPS=['analisi del profilo cliente...','ricerca stessa categoria merceologica...','mappa globale dei player...','stima fit sui tuoi identikit...'];
+var simTick=null;
+function getSIM(){try{return JSON.parse(localStorage.getItem('mysim')||'[]')}catch(e){return[]}}
+function setSIM(l){try{localStorage.setItem('mysim',JSON.stringify(l))}catch(e){}}
+function drawSIM(){
+var l=getSIM(),tb=document.getElementById('mysim');
+Array.prototype.forEach.call(document.querySelectorAll('#mysim tr[data-own]'),function(r){r.remove()});
+l.forEach(function(x,i){
+if(typeof x==='string')x={n:x,t:0,done:true};
+var r=document.createElement('tr');
+var status=x.done?'<span class="tg g">✓ analisi completata (demo — vedi formato sotto)</span>'
+ :'<span class="rd"><i></i></span><span class="step">'+SIM_STEPS[0]+'</span>';
+r.innerHTML='<td><b>'+String(x.n).replace(/[<>&]/g,'')+'</b></td><td style="display:flex;align-items:center;gap:8px">'+status+'</td>';
+tb.appendChild(r)});
+clearInterval(simTick);
+simTick=setInterval(function(){
+var ll=getSIM(),changed=false,now=Date.now();
+ll.forEach(function(x,i){if(typeof x==='string')x={n:x,t:0,done:true};
+ if(!x.done&&now-x.t>12000){x.done=true;changed=true;
+ var rows=document.querySelectorAll('#mysim tr[data-own]');if(rows[i])rows[i].cells[1].innerHTML='<span class="tg g">✓ analisi completata (demo — vedi formato sotto)</span>';}});
+if(changed)setSIM(ll);
+else Array.prototype.forEach.call(document.querySelectorAll('#mysim .step'),function(s){var k=SIM_STEPS.indexOf(s.textContent);s.textContent=SIM_STEPS[(k+1)%SIM_STEPS.length]});
+},2600);}
+drawSIM();
+document.getElementById('addsim').onclick=function(){var i=document.getElementById('newsim');var v=i.value.trim();if(!v)return;
+var l=getSIM();l.push({n:v,t:Date.now(),done:false});setSIM(l);i.value='';drawSIM();};
+document.getElementById('newsim').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('addsim').click()});
+
+/* ===== 8. MAPPA DOPPIO MOTORE ===== */
+var map=null,Lmap=null;
+var MD=(window.CO_DATA&&window.CO_DATA.map)?window.CO_DATA.map:{mercati:[],clienti:[],fornitori:[],news:[]};
+var MDATA={
+mercati:[[2,46.5,'fr','FRANCIA · 78 · ora'],[19,52,'pl','POLONIA · 72 · ora'],[4.5,50.5,'bx','BENELUX · 60 · selettivo'],[-2,54,'uk','UK · 58 · fase 2'],[10,51,'de','GERMANIA · 55 · selettivo']],
+clienti:[[10.3,44.8,'Parma · Pedrignano — HQ, più grande pastificio del mondo'],[10.49,45.39,'Castiglione delle Stiviere — bakery 105kt/anno'],[15.54,41.46,'Foggia'],[13.77,45.6,'Muggia'],[31.61,40.73,'Bolu (TR)'],[23.7,38.05,'Tebe (GR)'],[-93.63,42.03,'Ames IA (USA)'],[-77.71,42.91,'Avon NY (USA)'],[-73.57,45.5,'Montréal (CA)'],[-101.0,22.15,'San Luis Potosí (MX)']],
+fornitori:[[8.06,45.57,'Distretto tessile Biella — da mappare'],[27.14,38.42,'Confezione partner potenziale (Turchia) — da mappare']],
+news:[[12.48,41.9,'Italia — cicli normativi DPI · riordini'],[2.35,48.85,'Francia — gare riordino · normativa DPI'],[21.01,52.23,'Polonia — boom hub logistici'],[-0.13,51.5,'UK — tender uniformi NHS'],[13.4,52.52,'Germania — Supply Chain Act'],[4.35,50.85,'Benelux — gare con requisiti CO2']]};
+function mercatiHTML(m){return '<b>'+m[3]+'</b><br><a href="#" style="color:var(--ac)" onclick="event.preventDefault();document.querySelector(\'[data-v=v3]\').click();setTimeout(function(){var b=document.querySelector(\'.cbtn[data-c='+m[2]+']\');if(b)b.click()},80)">apri pannello paese →</a>'}
+function bindFilters(getG){
+document.querySelectorAll('.mapfilter input').forEach(function(cb){cb.addEventListener('change',function(){
+var g=getG();(g[cb.dataset.l]||[]).forEach(function(m){cb.checked?m.addTo(g._map):m.remove()})})});}
+function initMap(){
+if(map||Lmap)return;
+var ok=false;
+if(window.maplibregl&&maplibregl.supported&&maplibregl.supported()){ok=tryMaplibre();}
+if(!ok)ok=tryLeaflet();
+if(!ok)document.getElementById('omap').innerHTML='<div style="padding:60px 20px;color:var(--tx3);text-align:center">Mappa non disponibile su questo browser/connessione.<br>Il resto della demo funziona normalmente.</div>';}
+function tryMaplibre(){
+try{
+map=new maplibregl.Map({container:'omap',style:'https://tiles.openfreemap.org/styles/positron',
+center:[10,48],zoom:3.4,pitch:50,bearing:-12,maxBounds:[[-175,-80],[185,82]],renderWorldCopies:false,attributionControl:{compact:true}});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}));
+map.addControl(new maplibregl.FullscreenControl());
+function mkEl(cls){var d=document.createElement('div');d.innerHTML='<span class="mk '+cls+'"></span>';return d.firstChild}
+var LY={clienti:[],mercati:[],fornitori:[],news:[]};
+MD.mercati.forEach(function(m){LY.mercati.push(new maplibregl.Marker({element:mkEl('m1')}).setLngLat([m[0],m[1]]).setPopup(new maplibregl.Popup({offset:16,closeButton:false}).setHTML(mercatiHTML(m))).addTo(map))});
+MD.clienti.forEach(function(s){LY.clienti.push(new maplibregl.Marker({element:mkEl('m2')}).setLngLat([s[0],s[1]]).setPopup(new maplibregl.Popup({offset:16,closeButton:false}).setHTML('<b>Cliente:</b> '+s[2]+'<br><span style="color:var(--tx3)">mossa: referenza sede madre</span>')).addTo(map))});
+MD.fornitori.forEach(function(s){LY.fornitori.push(new maplibregl.Marker({element:mkEl('m3')}).setLngLat([s[0],s[1]]).setPopup(new maplibregl.Popup({offset:16,closeButton:false}).setHTML('<b>Fornitore:</b> '+s[2])).addTo(map))});
+MD.news.forEach(function(s){LY.news.push(new maplibregl.Marker({element:mkEl('m5')}).setLngLat([s[0],s[1]]).setPopup(new maplibregl.Popup({offset:16,closeButton:false}).setHTML('<b>News di settore:</b> '+s[2]+'<br><span style="color:var(--tx3)">demo: tipologie di segnale del radar</span>')).addTo(map))});
+var g={_map:map};Object.keys(LY).forEach(function(k){g[k]=LY[k]});bindFilters(function(){return g});
+setTimeout(function(){map.resize()},150);
+return true;
+}catch(e){document.getElementById('omap').innerHTML='';map=null;return false;}}
+function tryLeaflet(){
+if(!window.L)return false;
+try{
+var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri, Maxar',maxZoom:12,noWrap:true});
+var lab=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:12,noWrap:true});
+var dk=L.layerGroup([sat,lab]);
+var lt=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:12,noWrap:true});
+Lmap=L.map('omap',{zoomControl:true,maxBounds:[[-75,-185],[80,195]],maxBoundsViscosity:1.0}).setView([46,12],3.5);
+dk.addTo(Lmap);
+window.swapTiles=function(){if(document.body.classList.contains('light')){Lmap.removeLayer(dk);lt.addTo(Lmap);}else{Lmap.removeLayer(lt);dk.addTo(Lmap);}};
+function mkIco(cls){return L.divIcon({className:'',html:'<span class="mk '+cls+'"></span>',iconSize:[12,12],iconAnchor:[6,6]})}
+var LY={clienti:[],mercati:[],fornitori:[],news:[]};
+MD.mercati.forEach(function(m){var mk=L.marker([m[1],m[0]],{icon:mkIco('m1')}).bindPopup(mercatiHTML(m));mk.addTo(Lmap);LY.mercati.push(mk)});
+MD.clienti.forEach(function(s){var mk=L.marker([s[1],s[0]],{icon:mkIco('m2')}).bindPopup('<b>Cliente:</b> '+s[2]+'<br><span style="color:var(--tx3)">mossa: referenza sede madre</span>');mk.addTo(Lmap);LY.clienti.push(mk)});
+MD.fornitori.forEach(function(s){var mk=L.marker([s[1],s[0]],{icon:mkIco('m3')}).bindPopup('<b>Fornitore:</b> '+s[2]);mk.addTo(Lmap);LY.fornitori.push(mk)});
+MD.news.forEach(function(s){var mk=L.marker([s[1],s[0]],{icon:mkIco('m5')}).bindPopup('<b>News di settore:</b> '+s[2]+'<br><span style="color:var(--tx3)">demo: tipologie di segnale</span>');mk.addTo(Lmap);LY.news.push(mk)});
+var g={_map:Lmap};Object.keys(LY).forEach(function(k){g[k]=LY[k]});bindFilters(function(){return g});
+setTimeout(function(){Lmap.invalidateSize()},150);
+return true;
+}catch(e){return false;}}
+
+/* ===== 9. SALA STRATEGIA ===== */
+var DEFT=[["Produzione / confezione",14,"Progetta e produce capi personalizzati: taglio, confezione, finiture, controlli qualità","Capacità assorbita da pochi grandi clienti; scarti taglie non ottimizzati"],
+["Ufficio tecnico / design",5,"Sviluppa capi e collezioni sul brand del cliente: pattern, campionature, tessuti","Sovraccarico quando arrivano ordini custom urgenti dai grandi"],
+["Vendite",3,"Dirette B2B: relazioni storiche, ordini, riordini","Assorbite dai grandi account; nessuno dedicato allo sviluppo di nuove PMI"],
+["Amministrazione",3,"Contabilità, ordini, fatturazione, pagamenti","—"],
+["Magazzino / logistica",4,"Scorte, spedizioni, gestione resi e cambi taglia","Resi e cambi taglia pesano sui margini"],
+["E-commerce / digital",1,"Gestisce le piattaforme dedicate per i clienti (store interni delle dotazioni)","Sotto-dimensionato: il servizio che nessun competitor offre cresce piano"]];
+function getD(){try{var l=JSON.parse(localStorage.getItem('depts_v2')||'null');return (l&&l.length)?l:DEFT.map(function(x){return x.slice()})}catch(e){return DEFT}}
+function setD(l){try{localStorage.setItem('depts_v2',JSON.stringify(l))}catch(e){}}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function drawD(){
+var l=getD(),box=document.getElementById('deptlist');box.innerHTML='';var tot=0;
+l.forEach(function(d,i){tot+=+d[1]||0;
+var c=document.createElement('div');c.style.cssText='border:1px solid var(--line);border-radius:10px;padding:10px 12px';
+c.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:13.5px;flex:1">'+esc(d[0])+'</b>'
+ +'<label style="font-size:11px;color:var(--tx3)">persone</label><input type="number" min="0" value="'+esc(d[1])+'" data-d="'+i+'" data-f="1" style="width:58px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12px;color:var(--tx)">'
+ +'<button class="chip" onclick="delD('+i+')">✕</button></div>'
+ +'<div style="font-size:11px;color:var(--tx3);margin-bottom:2px">Cosa fa il team</div>'
+ +'<textarea data-d="'+i+'" data-f="2" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;color:var(--tx);resize:vertical">'+esc(d[2])+'</textarea>'
+ +'<div style="font-size:11px;color:var(--tx3);margin:6px 0 2px">Problemi del team</div>'
+ +'<textarea data-d="'+i+'" data-f="3" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;color:var(--tx3);resize:vertical">'+esc(d[3])+'</textarea>';
+box.appendChild(c);});
+document.getElementById('totdept').textContent=tot;}
+window.delD=function(i){var l=getD();l.splice(i,1);setD(l);drawD();checkStratBtn();};
+document.getElementById('deptlist').addEventListener('input',function(e){
+var s=e.target;if(!s.dataset||s.dataset.d===undefined)return;
+var l=getD();l[+s.dataset.d][+s.dataset.f]=s.value;setD(l);
+if(s.dataset.f==='1'){var t=0;l.forEach(function(d){t+=+d[1]||0});document.getElementById('totdept').textContent=t;}
+checkStratBtn();});
+document.getElementById('adddept').onclick=function(){
+var n=document.getElementById('newdept').value.trim();if(!n)return;
+var q=document.getElementById('newdeptn').value||'1';
+var w=document.getElementById('newdeptwhat').value.trim()||'— da compilare —';
+var pb=document.getElementById('newdeptprob').value.trim()||'—';
+var l=getD();l.push([n,q,w,pb]);setD(l);
+document.getElementById('newdept').value='';document.getElementById('newdeptn').value='';document.getElementById('newdeptwhat').value='';document.getElementById('newdeptprob').value='';drawD();}
+try{var pg=JSON.parse(localStorage.getItem('stratpg')||'null');
+if(pg){document.getElementById('prob').value=pg.p||document.getElementById('prob').value;
+document.getElementById('goal').value=pg.g||document.getElementById('goal').value;}}catch(e){}
+function savePG(){try{localStorage.setItem('stratpg',JSON.stringify({p:document.getElementById('prob').value,g:document.getElementById('goal').value}))}catch(e){}}
+document.getElementById('resetdemo').onclick=function(){if(confirm('Cancella tutti i dati salvati della demo (reparti, chat, flag, liste) e ricarica?')){try{localStorage.clear();}catch(e){}location.reload();}};
+document.getElementById('prob').addEventListener('input',savePG);
+document.getElementById('goal').addEventListener('input',savePG);
+var STRAT_STEPS=['analisi organizzazione e capacità...','lettura problema e obiettivo...','cross-check con radar (clienti, mercati)...','costruzione leve e piano 90 giorni...'];
+function genStrategy(){
+var p=document.getElementById('stprog');p.style.display='inline-flex';
+var s=p.querySelector('.step'),i=0;s.textContent=STRAT_STEPS[0];
+var t=setInterval(function(){i++;if(i<STRAT_STEPS.length){s.textContent=STRAT_STEPS[i]}else{clearInterval(t);p.style.display='none';
+var prob=document.getElementById('prob').value,goal=document.getElementById('goal').value;
+var tot=document.getElementById('totdept').textContent;
+var depts=getD().filter(function(d){return d[3]&&d[3]!=='ok'&&d[3].indexOf('—')!==0});
+var deptLine=depts.map(function(d){return d[0]+' ('+d[1]+'p): '+d[3]}).join(' · ')||'nessun problema di reparto segnalato';
+var p=prob.toLowerCase();
+var allD=getD();
+var notes=chatAll().filter(function(m){return m.w==='m'}).map(function(m){return m.t});
+var notesHtml=notes.length?'<b style="color:var(--tx)">Note aggiunte dall\u2019abbonato (chat):</b> '+notes.map(function(n){return '\u201c'+n+'\u201d'}).join(' · ')+'<br><br>':'';
+var flagged=allD.filter(function(d){return d[3]&&d[3].length>3&&d[3]!=='ok'&&d[3].indexOf('\u2014')!==0});
+var top=flagged.slice().sort(function(a,b){return b[3].length-a[3].length}).slice(0,2);
+var L1=/margin|dipenden|pochi clienti|concentrat/.test(p)
+ ?'<b style="color:var(--tx)">Leva 1 — Mix clienti.</b> La deduco dal problema che hai scritto: \u201c'+prob+'\u201d. Se cita margini sottili o dipendenza da pochi clienti, la leva è diversificare: canale PMI via consulenti (RSPP, consulenti del lavoro), prodotto d\u2019ingresso a trigger. Target indicativo: 40-50 nuove PMI in 12 mesi.'
+ :'<b style="color:var(--tx)">Leva 1 — Focalizzazione.</b> Dal problema \u201c'+prob.slice(0,90)+'\u201d: concentra le risorse sul segmento a maggior margine secondo i tuoi identikit, sospendendo il resto.';
+function classifyPb(t){t=String(t).toLowerCase();
+if(/sottodimension|troppo poco|poche persone|manca gente|uno solo|solo una|carenz/.test(t))return 'capacita';
+if(/assorbit|sovraccaric|urgent|impegnat|satur/.test(t))return 'priorita';
+if(/scart|resi|sprech|cambi taglia|ritiri/.test(t))return 'processo';
+if(/nessun|non c'e|non c\u2019|manca competenza|buco/.test(t))return 'competenza';
+if(/comunicaz|passaggio|silos|mani|coordina/.test(t))return 'handoff';
+if(/margin|prezzo|cost/.test(t))return 'economico';
+return 'generico';}
+var PBNAMES={capacita:'capacità insufficiente',priorita:'reparto in balia delle urgenze',processo:'perdita da processo (scarti/resi)',competenza:'buco di competenza',handoff:'passaggi di consegna deboli',economico:'pressione su margini/costi',generico:'problema operativo'};
+function solutionFor(type,d){var n=+d[1]||1;
+switch(type){
+case 'capacita':return 'Rinforzo selettivo: porta '+d[0]+' da '+n+' a '+(n+1)+' persone entro 90 giorni; intanto sposta le attività ripetitive verso produzione e misura la coda di lavoro ogni venerdì. Se tra 90 giorni la coda non si è ridotta, il problema non è il numero ma il processo.';
+case 'priorita':return 'Finestra protetta per '+d[0]+': due mezze giornate a settimana chiuse alle urgenze cliente, dedicate al lavoro pianificato. Le urgenze vere diventano tariffa +15%: il cliente paga la priorità, il reparto smette di bruciare risorse.';
+case 'processo':return 'Audit sugli ultimi 50 ordini gestiti da '+d[0]+': classifica le cause di scarto/reso, poi standardizza (taglie per cliente abituale, checklist di imballo, lotti minimi). Target: -30% di scarti in 90 giorni, misurato sui dati di magazzino.';
+case 'competenza':return 'Copri il buco senza assumere subito: consulente esterno part-time su '+d[0]+' per 3 mesi, in parallelo formazione crociata di una persona interna. A 90 giorni valuta: internalizzare (assunzione) o continuare esterno.';
+case 'handoff':return 'Mappa i passaggi di consegna che toccano '+d[0]+': un responsabile del passaggio, una checklist condivisa, una riunione di 15 minuti a settimana con l\u2019altro reparto. Il problema non è la gente, è il confine.';
+case 'economico':return 'Su '+d[0]+': sposta il listino da prezzo-a-capo a valore-del-servizio (il riordino si paga come continuità, non come singolo ordine); revisione sui top clienti entro 60 giorni.';
+default:return 'Su '+d[0]+': analisi "5 perché" del problema scritto, 3 azioni specifiche entro 2 settimane, revisione a 30 giorni con una misura prima/dopo.';}}
+var L2=flagged.length
+ ?'<b style="color:var(--tx)">Leva 2 — Analisi per reparto: ogni problema che hai scritto, classificato e risolto.</b><br>'+flagged.map(function(d){
+   var ty=classifyPb(d[3]);
+   return '<b>'+d[0]+'</b> ('+d[1]+' persone) — hai scritto: \u201c'+d[3]+'\u201d<br>&nbsp;&nbsp;\u2192 <b>Diagnosi:</b> '+PBNAMES[ty]+' &nbsp;\u2192 <b>Soluzione:</b> '+solutionFor(ty,d)}).join('<br><br>')
+  +'<br><br>Regola generale con '+tot+' persone: riorganizza e sblocca i vincoli prima di assumere nuove teste.'
+ :'<b style="color:var(--tx)">Leva 2 — Capacità.</b> Nessun reparto segnala problemi: verifica che '+tot+' persone reggano l\u2019obiettivo prima di aggiungerne.';
+var L3=/margine|prezzo|costo|cash|fatturato/.test(p)
+ ?'<b style="color:var(--tx)">Leva 3 — Margine e cassa.</b> Fonte: il problema cita margine/costi. Revisione listino sui riordini, standardizzazione lotti per tagliare gli scarti, sale&leaseback del sedime per finanziare il piano senza equity.'
+ :'<b style="color:var(--tx)">Leva 3 — Disciplina economica.</b> Monitoraggio margini per ordine e ricavo ricorrente; strumenti: factoring, Nuova Sabatini, Transizione 4.0.';
+var html='<b style="color:var(--tx)">Da dove parte:</b> '+prob+'<br><b style="color:var(--tx)">Dove deve arrivare:</b> '+goal+'<br><b style="color:var(--tx)">Dove fa male (dai tuoi campi \u201cproblemi\u201d):</b> '+deptLine+'<br>'+notesHtml+'<br>'+L1+'<br><br>'+L2+'<br><br>'+L3+'<br><br>'
++'<b style="color:var(--tx)">Piano 90 giorni:</b> 1) attiva 5 consulenti RSPP pilota + kit d\u2019ingresso pronto (1-30) · 2) primo case study col servizio che hai segnalato come differenziante (30-60) · 3) riunione prezzo sui top clienti per riordino (60-90).<br><br>'
++'<b style="color:var(--tx)">KPI:</b> nuove aziende attivate per identikit · margine lordo/ordine · ricavo ricorrente % · dipendenza (top-3/totale).<br>'
++'<span class="note">Ogni leva cita la fonte da cui la ricavo. Bozza demo: in produzione l\u2019LLM ragiona su tutti i dati del radar (identikit, scarti, portafoglio, mappa) e questa pagina si aggiorna da sola a ogni refresh mensile.</span>';
+document.getElementById('stratout').innerHTML=html;
+document.getElementById('stratres').style.display='block';
+stratSig=currentSig();checkStratBtn();
+document.getElementById('stratres').scrollIntoView({behavior:'smooth',block:'nearest'});}},900);}
+
+/* chat agente strategico */
+function getChat(){try{var c=JSON.parse(localStorage.getItem('stratchat')||'null');return c}catch(e){return null}}
+function chatAll(){var c=getChat();return c||[{w:'a',t:'Sono l\u2019agente strategico. Scrivimi contesto, vincoli o idee — es. "abbiamo un forte legame col calcio giovanile" oppure "non possiamo assumere prima del 2027". Le integro nella strategia quando la aggiorni.'}]}
+function setChat(l){try{localStorage.setItem('stratchat',JSON.stringify(l))}catch(e){}}
+function drawChat(){
+var box=document.getElementById('chatlog');box.innerHTML='';
+chatAll().forEach(function(m){
+var d=document.createElement('div');
+d.style.cssText=m.w==='m'?'align-self:flex-end;background:var(--acbg);color:var(--tx);border-radius:10px 10px 2px 10px;padding:7px 11px;font-size:12.5px;max-width:82%'
+:'align-self:flex-start;background:var(--neubg);color:var(--tx2);border-radius:10px 10px 10px 2px;padding:7px 11px;font-size:12.5px;max-width:82%';
+d.textContent=m.t;box.appendChild(d);});
+box.scrollTop=box.scrollHeight;}
+drawChat();
+document.getElementById('chatsend').onclick=function(){
+var i=document.getElementById('chatmsg');var v=i.value.trim();if(!v)return;
+var l=chatAll();l.push({w:'m',t:v});setChat(l);i.value='';drawChat();
+setTimeout(function(){
+var short=v.length>70?v.slice(0,70)+'...':v;
+var l2=chatAll();l2.push({w:'a',t:'Nota registrata: "'+short+'". La strategia si sta aggiornando da sola con questa nota. (demo: in produzione riformulo io la strategia riga per riga.)'});setChat(l2);drawChat();if(stratSig!==null){clearTimeout(stratTimer);stratTimer=setTimeout(function(){if(stratSig!==null&&currentSig()!==stratSig)genStrategy();},1200);}else{checkStratBtn();}},800);};
+document.getElementById('chatmsg').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('chatsend').click()});
+
+/* aggiornamento strategia su modifica parametri */
+function currentSig(){try{return JSON.stringify([document.getElementById('prob').value,document.getElementById('goal').value,getD(),chatAll()])}catch(e){return ''}}
+var stratSig=null;
+var stratTimer=null;
+function checkStratBtn(){
+if(stratSig===null)return;
+if(currentSig()===stratSig)return;
+clearTimeout(stratTimer);
+stratTimer=setTimeout(function(){if(stratSig!==null&&currentSig()!==stratSig)genStrategy();},1500);}
+document.getElementById('genstrat').onclick=function(){genStrategy();};
+
+document.getElementById('prob').addEventListener('input',checkStratBtn);
+document.getElementById('goal').addEventListener('input',checkStratBtn);
+
+</script>
+</body>
+</html>

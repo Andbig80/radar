@@ -1,0 +1,5 @@
+{
+ "budget_monthly_usd": 5.0,
+ "max_markets_per_company": 3,
+ "strategy_enabled": false
+}

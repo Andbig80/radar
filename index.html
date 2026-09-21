@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Radar B2B — motore generico</title>
+<style>
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#0d1117;color:#e6e6e1;line-height:1.5;padding:18px;max-width:900px;margin:0 auto}
+.pt{font-size:12px;color:#7a7a72;margin-bottom:8px}
+.card{background:#161b22;border:1px solid #2a313a;border-radius:12px;padding:14px 16px;margin-top:12px}
+.tg{font-size:10px;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.g{background:#12281a;color:#4ade80}.w{background:#2c2012;color:#e8a04c}.n{background:#22272e;color:#8b8b82}
+.row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2a313a;font-size:13px}
+.row:last-child{border:none}
+.acard{border:1px solid #2a313a;border-radius:12px;padding:12px 14px;cursor:pointer}
+.acard:hover{border-color:#e6e6e1}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px;animation:k 2s infinite}
+@keyframes k{0%,100%{opacity:1}50%{opacity:.35}}
+input,textarea{width:100%;background:#0d1117;border:1px solid #2a313a;border-radius:8px;padding:8px 12px;color:#e6e6e1;font:inherit;font-size:13px;margin-bottom:6px}
+button{background:#e6e6e1;color:#0d1117;border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
+.note{font-size:11px;color:#7a7a72;margin-top:8px}
+.v{display:none}.v.on{display:block}
+code{background:#22272e;padding:2px 6px;border-radius:4px;font-size:11.5px}
+</style></head>
+<body>
+<b style="font-size:16px">Radar B2B — completo</b>
+<span class="note" style="margin-left:10px">aggiungi un'azienda (nome + sito) → il motore la profila, classifica il tipo, analizza il mercato. Ogni notte.</span>
+<div id="budgetline" class="note"></div>
+
+<div class="v on" id="menu"><div id="clist" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:12px"></div></div>
+
+<div class="card">
+<div class="pt"><b>Aggiungi un'azienda</b> — compila e premi il bottone: ti preparo la riga da incollare in <code>companies.json</code> sul repo (2 min, poi l'analisi parte alla prossima notte o con Run workflow)</div>
+<input id="fn" placeholder="Nome azienda">
+<input id="fu" placeholder="Sito web, es. https://www.esempio.it">
+<button onclick="genCfg()">Genera configurazione</button>
+<pre id="cfgout" style="display:none;background:#0d1117;border:1px solid #2a313a;border-radius:8px;padding:10px;font-size:12px;overflow-x:auto"></pre>
+</div>
+
+<div class="v" id="co">
+<div class="hbar" style="display:flex;gap:10px;align-items:center;border-bottom:1px solid #2a313a;padding-bottom:8px;margin-bottom:6px">
+<b id="coname" style="font-size:15px"></b><span id="cotype" class="tg g"></span>
+<span style="margin-left:auto;font-size:11px;color:#7a7a72">aggiornato: <b id="coupdate"></b></span></div>
+<div class="card" id="coprof"></div>
+<div class="card" id="comarket" style="display:none"></div>
+<div class="card" id="codiff"></div>
+<div class="card" id="costrat" style="display:none"></div>
+<button style="margin-top:10px" onclick="document.getElementById('co').classList.remove('on');document.getElementById('menu').classList.add('on')">← torna alle aziende</button>
+</div>
+
+<script>
+var CFGS=null,DATA={};
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+fetch('companies.json?t='+Date.now()).then(function(r){return r.json()}).then(function(c){CFGS=c;
+return Promise.all(c.companies.map(function(x){return fetch('data/'+x.slug+'.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){DATA[x.slug]=d}).catch(function(){})}))}).then(render).catch(function(){document.getElementById('clist').innerHTML='<div class="note">Lancia prima il workflow (Actions → engine → Run workflow)</div>'});
+fetch('config.json?t='+Date.now()).then(function(r){return r.json()}).then(function(c){
+document.getElementById('budgetline').textContent='tetto mensile: '+c.budget_monthly_usd+' USD — controllato dal motore (quando finisce, i passi a pagamento si sospendono e i dati gratuiti continuano)'});
+function render(){
+var el=document.getElementById('clist');el.innerHTML='';
+if(!CFGS.companies.length){el.innerHTML='<div class="card" style="grid-column:1/-1;text-align:center;color:#7a7a72">Benvenuto. Aggiungi la tua prima azienda qui sotto: il motore la profila durante la notte (o premi Run workflow).</div>';}
+CFGS.companies.forEach(function(c){var d=DATA[c.slug]||{};
+var card=document.createElement('div');card.className='acard';
+card.innerHTML='<b>'+esc(c.name)+'</b> <span class="tg g">'+(d.type||'…')+'</span>'
++'<div class="pt" style="margin:4px 0">'+esc(c.url)+'</div>'
++'<div style="font-size:11.5px;color:#a8a8a0"><span class="pulse"></span>aggiornato '+esc((d.updated||'').slice(0,16).replace('T',' '))+(d.budget?' · speso '+d.budget.spent_usd+'/'+d.budget.cap_usd+' USD':'')+'</div>';
+card.onclick=function(){openCo(c.slug)};el.appendChild(card);});}
+function openCo(slug){location.href='dashboard.html?company='+slug;return;
+var c=CFGS.companies.filter(function(x){return x.slug===slug})[0];var d=DATA[slug]||{};
+document.getElementById('menu').classList.remove('on');document.getElementById('co').classList.add('on');
+document.getElementById('coname').textContent=c.name;
+document.getElementById('cotype').textContent=d.type||'';
+document.getElementById('coupdate').textContent=(d.updated||'').slice(0,16).replace('T',' ')||'—';
+var p=d.profile||{};
+document.getElementById('coprof').innerHTML='<div class="pt">Profilo letto dal sito</div>'
++'<div class="row"><span style="width:110px;color:#7a7a72">Descrizione</span>'+esc(p.description)+'</div>'
++'<div class="row"><span style="width:110px;color:#7a7a72">Tipo</span><b>'+esc(d.type)+'</b> <span class="tg n">'+({T1:'commodity di filiera',T2:'custom di filiera',T3:'custom indiretto'}[d.type]||'')+'</span></div>'
++(p.hs_codes&&p.hs_codes.length?'<div class="row"><span style="width:110px;color:#7a7a72">Codici HS</span>'+esc(p.hs_codes.join(', '))+'</div>':'')
++(p.note?'<div class="row"><span style="width:110px;color:#7a7a72">Nota</span>'+esc(p.note)+'</div>':'');
+var mk=document.getElementById('comarket');
+if(d.mercato){mk.style.display='block';
+mk.innerHTML='<div class="pt">Mercato — dati reali Comtrade (anno '+d.mercato.anno+')</div>'
++'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">'
++'<div><span style="font-size:20px;font-weight:600">'+d.mercato.tot_ktons+' kt</span><br>importato</div>'
++'<div><span style="font-size:20px;font-weight:600">€ '+d.mercato.tot_bn_eur+' mld</span><br>valore CIF</div></div>';
+}else mk.style.display='none';
+document.getElementById('codiff').innerHTML='<div class="pt">Cosa e cambiato / azioni del motore</div>'
++(d.cosa_e_cambiato||[]).map(function(x){return '<div class="row"><span class="tg '+(x.tag==='azione'?'g':x.tag==='segnale'?'w':'n')+'">'+x.tag+'</span><span style="flex:1">'+esc(x.text)+'</span></div>'}).join('')||'';
+var st=document.getElementById('costrat');
+if(d.strategy){st.style.display='block';st.innerHTML='<div class="pt">Strategia (K3)</div><div style="font-size:13px;white-space:pre-wrap">'+esc(d.strategy)+'</div>';}
+else st.style.display='none';
+}
+function genCfg(){
+var n=document.getElementById('fn').value.trim(),u=document.getElementById('fu').value.trim();
+if(!n)return;
+var slug=n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+var obj={slug:slug,name:n,url:u,market_reporter:"380"};
+document.getElementById('cfgout').style.display='block';
+document.getElementById('cfgout').textContent=',\n'+JSON.stringify(obj);
+}
+</script>
+</body></html>
